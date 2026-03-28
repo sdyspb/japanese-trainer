@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Японский тренажёр (исправлен таймаут)</title>
+    <title>Японский тренажёр (таймаут = остановка)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -208,17 +208,10 @@
             gap: 12px;
         }
 
-        .stat-badge {
-            background: white;
-            padding: 5px 15px;
-            border-radius: 30px;
-            color: #b35f2c;
-        }
-
         .message-area {
             text-align: center;
             margin-top: 18px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: #c26e3c;
             font-weight: 500;
         }
@@ -234,16 +227,6 @@
             border-left: 6px solid #e67e22;
         }
 
-        hr {
-            margin: 12px 0;
-            border-color: #f0dbbc;
-        }
-        footer {
-            font-size: 0.7rem;
-            text-align: center;
-            margin-top: 18px;
-            color: #b59274;
-        }
         .file-info {
             background: #e9e0d3;
             border-radius: 30px;
@@ -252,6 +235,14 @@
             font-size: 0.8rem;
             text-align: center;
             color: #6b4c34;
+        }
+
+        .warning {
+            background: #fff0c0;
+            border-left: 5px solid #f0ad4e;
+            color: #856404;
+            padding: 10px;
+            border-radius: 20px;
         }
         @media (max-width: 550px) {
             .japanese-word { font-size: 2rem; }
@@ -268,9 +259,9 @@
     <div class="sub">выберите папку со словами (файлы .txt)</div>
 
     <div class="stage-selector" id="stageSelector">
-        <button data-stage="1" class="stage-btn">📁 Этап 1 (существительные)</button>
-        <button data-stage="2" class="stage-btn">📁 Этап 2 (прилагательные)</button>
-        <button data-stage="3" class="stage-btn">📁 Этап 3 (глаголы)</button>
+        <button data-stage="1" class="stage-btn">📁 Этап 1</button>
+        <button data-stage="2" class="stage-btn">📁 Этап 2</button>
+        <button data-stage="3" class="stage-btn">📁 Этап 3</button>
     </div>
 
     <div class="quiz-panel">
@@ -279,7 +270,7 @@
 
         <div class="timer-area">
             <span class="timer-label">⏱️ осталось</span>
-            <span class="timer-clock" id="timerDisplay">5.0</span>
+            <span class="timer-clock" id="timerDisplay">10.0</span>
             <span class="timer-label">сек</span>
         </div>
 
@@ -300,13 +291,13 @@
         <div id="fileInfoArea" class="file-info"></div>
     </div>
     <div id="finalStatsPanel" style="min-height: 70px;"></div>
-    <footer>🎧 слово озвучивается → таймер 5с → жми ДА/НЕТ<br>📄 Формат .txt: японское слово|перевод (каждая пара на новой строке)</footer>
+    <footer>🎧 слово озвучивается → таймер 10с → жми ДА/НЕТ<br>⏰ Если не ответить за 10 секунд — сессия остановится (нужно выбрать папку заново)</footer>
 </div>
 
 <script>
-    // ---------------------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ --------------------------
+    // ---------------------- СОСТОЯНИЕ --------------------------
     let currentStage = 1;
-    let wordsData = [];
+    let wordsData = [];               // { jp, ru, mastered }
     let unmasteredIndices = [];
     let sessionActive = false;
     let currentWordObj = null;
@@ -373,6 +364,31 @@
         noBtn.disabled = disabled;
     }
     
+    // Полная остановка сессии с сообщением (например, по таймауту)
+    function stopSessionWithWarning(message) {
+        if (!sessionActive) return;
+        sessionActive = false;
+        abortCurrentTimersAndSpeech();
+        disableAnswerButtons(true);
+        
+        // Показываем предупреждение в панели сообщений
+        messageArea.innerHTML = `<span class="warning">⚠️ ${message} ⚠️</span>`;
+        // Очищаем статистику и поля
+        finalStatsPanel.innerHTML = "";
+        japaneseWordEl.innerText = "⏸️ сессия остановлена";
+        candidateRussianEl.innerText = "выберите папку заново";
+        timerDisplay.innerText = "0.0";
+        // Сбрасываем счётчики (не сохраняем прогресс)
+        wordsData = [];
+        unmasteredIndices = [];
+        statsCorrect = 0;
+        statsIncorrect = 0;
+        totalWordCount = 0;
+        updateStatsUI();
+        fileInfoArea.innerHTML = "⚠️ Для продолжения выберите папку снова";
+    }
+    
+    // Завершение успешной сессии (все слова выучены)
     function finishSession() {
         if (!sessionActive) return;
         sessionActive = false;
@@ -395,7 +411,7 @@
         timerDisplay.innerText = "0.0";
     }
     
-    // Озвучивание с принудительным таймаутом
+    // Озвучивание с таймаутом (2 секунды)
     async function speakWithTimeout(text, timeoutMs = 2000) {
         if (!window.speechSynthesis) return;
         return new Promise((resolve) => {
@@ -428,13 +444,11 @@
         });
     }
     
-    // Основная функция перехода к следующему слову
+    // Переход к следующему слову (если сессия активна)
     async function nextQuestion() {
-        // Защита от одновременных вызовов
         if (lockNextQuestion) return;
         lockNextQuestion = true;
         
-        // Полная остановка предыдущей активности
         abortCurrentTimersAndSpeech();
         disableAnswerButtons(true);
         
@@ -461,23 +475,20 @@
         
         japaneseWordEl.innerText = word.jp;
         candidateRussianEl.innerText = currentCandidateText;
-        timerDisplay.innerText = "5.0";
+        timerDisplay.innerText = "10.0";
         
-        // Озвучивание (с защитным таймаутом)
+        // Озвучивание (не блокируем, но ждём)
         try {
             await speakWithTimeout(word.jp, 2000);
-        } catch (e) {
-            console.warn("Ошибка речи:", e);
-        }
+        } catch (e) { /* игнорируем */ }
         
-        // Проверяем, не завершилась ли сессия за время речи
         if (!sessionActive) {
             lockNextQuestion = false;
             return;
         }
         
-        // Запускаем таймер 5 секунд
-        let timeLeft = 5.0;
+        // Запускаем таймер 10 секунд
+        let timeLeft = 10.0;
         timerDisplay.innerText = timeLeft.toFixed(1);
         isAwaitingAnswer = true;
         disableAnswerButtons(false);
@@ -508,31 +519,24 @@
                 disableAnswerButtons(true);
                 handleTimeout();
             }
-        }, 5000);
+        }, 10000); // 10 секунд
         
         lockNextQuestion = false;
     }
     
-    // Обработка таймаута — не засчитываем, но переходим к следующему слову
+    // Обработка таймаута: останавливаем сессию с предупреждением
     function handleTimeout() {
         if (!sessionActive) return;
         if (!isAwaitingAnswer) return;
         
-        // Сбрасываем флаг ожидания
+        // Сбрасываем флаг, чтобы не повторяться
         isAwaitingAnswer = false;
         
-        // Увеличиваем счётчик ошибок (незасчитанная попытка)
-        statsIncorrect++;
-        updateStatsUI();
-        messageArea.innerText = "⏰ Время вышло! Слово не засчитано, переходим к следующему.";
-        
-        // Принудительно снимаем возможную блокировку перед следующим вопросом
-        lockNextQuestion = false;
-        
-        // Переходим к следующему слову (оно остаётся в unmastered)
-        nextQuestion();
+        // Останавливаем сессию с сообщением
+        stopSessionWithWarning("Хватит спать! Сессия остановлена. Выберите папку заново.");
     }
     
+    // Обработка ответа пользователя (ДА/НЕТ)
     function handleAnswer(userSaidYes) {
         if (!sessionActive || !isAwaitingAnswer) return;
         
@@ -561,8 +565,7 @@
         if (unmasteredIndices.length === 0 && sessionActive) {
             finishSession();
         } else {
-            // Переходим к следующему слову
-            nextQuestion();
+            nextQuestion(); // переходим к следующему слову
         }
     }
     
@@ -613,6 +616,7 @@
     }
     
     function startSessionWithWords(wordsArray, stageNum) {
+        // Если уже есть активная сессия, завершаем её
         if (sessionActive) {
             abortCurrentTimersAndSpeech();
             sessionActive = false;
@@ -639,7 +643,7 @@
         
         japaneseWordEl.innerText = "⚡準備中⚡";
         candidateRussianEl.innerText = "...";
-        timerDisplay.innerText = "5.0";
+        timerDisplay.innerText = "10.0";
         
         lockNextQuestion = false;
         nextQuestion();
