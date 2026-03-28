@@ -1,4 +1,4 @@
-<img width="381" height="601" alt="image" src="https://github.com/user-attachments/assets/ada4e8f9-1ccb-45f4-8ada-4f6690c170c2" />
+<img width="375" height="572" alt="image" src="https://github.com/user-attachments/assets/b1724d1a-858e-4c8e-a80c-1ac95d0a7a11" />
 
 # Японский тренажёр
 
