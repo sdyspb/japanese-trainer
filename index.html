@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Японский тренажёр (исправлен таймаут)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f7f3e9 0%, #fff4e6 100%);
+            font-family: 'Segoe UI', 'Noto Sans', system-ui, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .study-container {
+            max-width: 720px;
+            width: 100%;
+            background: rgba(255, 250, 240, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            padding: 28px 24px 36px;
+            transition: all 0.2s ease;
+            border: 1px solid #ffe6c7;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c43c2b, #e8894a);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+            text-align: center;
+        }
+
+        .sub {
+            text-align: center;
+            color: #9b6a4c;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+            border-bottom: 1px dashed #f0cfb0;
+            padding-bottom: 12px;
+        }
+
+        .stage-selector {
+            background: #fff0e0;
+            border-radius: 60px;
+            padding: 8px 12px;
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        .stage-btn {
+            background: #fae6d2;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            color: #a55d2a;
+            transition: 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            font-family: inherit;
+        }
+
+        .stage-btn.active {
+            background: #d95b2a;
+            color: white;
+            box-shadow: 0 6px 12px rgba(217, 91, 42, 0.3);
+        }
+
+        .stage-btn:hover:not(.active) {
+            background: #ffddbb;
+            transform: scale(0.96);
+        }
+
+        .quiz-panel {
+            background: #ffffffd9;
+            border-radius: 48px;
+            padding: 28px 20px 24px;
+            margin: 12px 0 24px;
+            box-shadow: inset 0 1px 3px #0001, 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .japanese-word {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 2px;
+            background: #fef3e4;
+            padding: 20px 10px;
+            border-radius: 56px;
+            margin-bottom: 28px;
+            color: #2c221b;
+            word-break: break-word;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', sans-serif;
+            box-shadow: 0 3px 6px #0001 inset;
+        }
+
+        .candidate-russian {
+            background: #fff5ec;
+            border-radius: 40px;
+            padding: 20px 12px;
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2d3e50;
+            border: 2px solid #ffe0bf;
+            margin-bottom: 24px;
+            word-break: break-word;
+        }
+
+        .timer-area {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 28px;
+            font-weight: 600;
+        }
+
+        .timer-clock {
+            background: #2c1a0e;
+            color: #ffc896;
+            font-size: 2.1rem;
+            font-family: monospace;
+            padding: 8px 20px;
+            border-radius: 80px;
+            letter-spacing: 3px;
+        }
+
+        .timer-label {
+            font-size: 1rem;
+            color: #9b6e4e;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 12px 0 12px;
+        }
+
+        .btn {
+            border: none;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 14px 30px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.1s linear;
+            font-family: inherit;
+            width: 140px;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.1);
+        }
+
+        .btn-yes {
+            background: #2e7d32;
+            color: white;
+        }
+        .btn-yes:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1b5e20;
+        }
+        .btn-no {
+            background: #b33c2c;
+            color: white;
+        }
+        .btn-no:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #8b2c1e;
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            background: #f7ede2;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-weight: 500;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .stat-badge {
+            background: white;
+            padding: 5px 15px;
+            border-radius: 30px;
+            color: #b35f2c;
+        }
+
+        .message-area {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.85rem;
+            color: #c26e3c;
+            font-weight: 500;
+        }
+
+        .final-stats {
+            background: #e9dccc;
+            border-radius: 32px;
+            padding: 18px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e2b;
+            border-left: 6px solid #e67e22;
+        }
+
+        hr {
+            margin: 12px 0;
+            border-color: #f0dbbc;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 18px;
+            color: #b59274;
+        }
+        .file-info {
+            background: #e9e0d3;
+            border-radius: 30px;
+            padding: 10px 15px;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            text-align: center;
+            color: #6b4c34;
+        }
+        @media (max-width: 550px) {
+            .japanese-word { font-size: 2rem; }
+            .candidate-russian { font-size: 1.2rem; }
+            .btn { font-size: 1.4rem; padding: 10px 16px; width: 110px; }
+            .study-container { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="study-container" id="app">
+    <h1>📖 日本語トレーニング</h1>
+    <div class="sub">выберите папку со словами (файлы .txt)</div>
+
+    <div class="stage-selector" id="stageSelector">
+        <button data-stage="1" class="stage-btn">📁 Этап 1 (существительные)</button>
+        <button data-stage="2" class="stage-btn">📁 Этап 2 (прилагательные)</button>
+        <button data-stage="3" class="stage-btn">📁 Этап 3 (глаголы)</button>
+    </div>
+
+    <div class="quiz-panel">
+        <div class="japanese-word" id="japaneseWord">----</div>
+        <div class="candidate-russian" id="candidateRussian">----</div>
+
+        <div class="timer-area">
+            <span class="timer-label">⏱️ осталось</span>
+            <span class="timer-clock" id="timerDisplay">5.0</span>
+            <span class="timer-label">сек</span>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-yes" id="yesBtn">✅ ДА</button>
+            <button class="btn btn-no" id="noBtn">❌ НЕТ</button>
+        </div>
+
+        <div class="stats-row">
+            <span>📊 верно: <strong id="correctCount">0</strong></span>
+            <span>❌ ошибок: <strong id="wrongCount">0</strong></span>
+            <span>📚 осталось слов: <strong id="remainingWords">0</strong></span>
+            <span>🔄 всего слов: <strong id="totalStageWords">0</strong></span>
+        </div>
+        <div class="message-area" id="messageArea">
+            🗂️ нажми на любой этап и выбери папку с текстовыми файлами
+        </div>
+        <div id="fileInfoArea" class="file-info"></div>
+    </div>
+    <div id="finalStatsPanel" style="min-height: 70px;"></div>
+    <footer>🎧 слово озвучивается → таймер 5с → жми ДА/НЕТ<br>📄 Формат .txt: японское слово|перевод (каждая пара на новой строке)</footer>
+</div>
+
+<script>
+    // ---------------------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ --------------------------
+    let currentStage = 1;
+    let wordsData = [];
+    let unmasteredIndices = [];
+    let sessionActive = false;
+    let currentWordObj = null;
+    let currentCandidateText = "";
+    let currentIsCorrectMatch = false;
+    
+    let statsCorrect = 0;
+    let statsIncorrect = 0;
+    let sessionStartTime = null;
+    let totalWordCount = 0;
+    
+    let activeTimerInterval = null;
+    let activeTimeoutId = null;
+    let isAwaitingAnswer = false;
+    let lockNextQuestion = false;
+    
+    // DOM
+    const japaneseWordEl = document.getElementById("japaneseWord");
+    const candidateRussianEl = document.getElementById("candidateRussian");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const correctCountSpan = document.getElementById("correctCount");
+    const wrongCountSpan = document.getElementById("wrongCount");
+    const remainingWordsSpan = document.getElementById("remainingWords");
+    const totalStageWordsSpan = document.getElementById("totalStageWords");
+    const messageArea = document.getElementById("messageArea");
+    const finalStatsPanel = document.getElementById("finalStatsPanel");
+    const fileInfoArea = document.getElementById("fileInfoArea");
+    
+    function updateStatsUI() {
+        correctCountSpan.innerText = statsCorrect;
+        wrongCountSpan.innerText = statsIncorrect;
+        remainingWordsSpan.innerText = unmasteredIndices.length;
+        totalStageWordsSpan.innerText = totalWordCount;
+    }
+    
+    function getRandomIncorrectRussian(correctRussian, excludeIndex) {
+        const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.ru !== correctRussian);
+        if (available.length === 0) return correctRussian;
+        return available[Math.floor(Math.random() * available.length)].ru;
+    }
+    
+    function generateQuestionForWord(word, wordIndex) {
+        const isCorrectVariant = Math.random() < 0.5;
+        let candidate;
+        if (isCorrectVariant) {
+            candidate = word.ru;
+        } else {
+            candidate = getRandomIncorrectRussian(word.ru, wordIndex);
+        }
+        return { candidateText: candidate, isMatch: (candidate === word.ru) };
+    }
+    
+    function abortCurrentTimersAndSpeech() {
+        if (activeTimerInterval) { clearInterval(activeTimerInterval); activeTimerInterval = null; }
+        if (activeTimeoutId) { clearTimeout(activeTimeoutId); activeTimeoutId = null; }
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        isAwaitingAnswer = false;
+    }
+    
+    function disableAnswerButtons(disabled = true) {
+        yesBtn.disabled = disabled;
+        noBtn.disabled = disabled;
+    }
+    
+    function finishSession() {
+        if (!sessionActive) return;
+        sessionActive = false;
+        abortCurrentTimersAndSpeech();
+        disableAnswerButtons(true);
+        const totalTimeSec = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
+        finalStatsPanel.innerHTML = `
+            <div class="final-stats">
+                🎉 ВСЕ СЛОВА ВЫУЧЕНЫ! 🎉<br>
+                ⏱️ Общее время: ${totalTimeSec} сек<br>
+                ✅ Правильных ответов: ${statsCorrect}<br>
+                ❌ Неправильных ответов: ${statsIncorrect}<br>
+                📖 Всего слов в наборе: ${totalWordCount}<br>
+                🔁 Всего попыток: ${statsCorrect + statsIncorrect}
+            </div>
+        `;
+        messageArea.innerText = "🏆 Этап завершён! Выберите другую папку для изучения.";
+        japaneseWordEl.innerText = "🎌 完成 🎌";
+        candidateRussianEl.innerText = "✨ отлично ✨";
+        timerDisplay.innerText = "0.0";
+    }
+    
+    // Озвучивание с принудительным таймаутом
+    async function speakWithTimeout(text, timeoutMs = 2000) {
+        if (!window.speechSynthesis) return;
+        return new Promise((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "ja-JP";
+            utterance.rate = 0.9;
+            let resolved = false;
+            const timer = setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    window.speechSynthesis.cancel();
+                    resolve();
+                }
+            }, timeoutMs);
+            utterance.onend = () => {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+            };
+            utterance.onerror = () => {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+            };
+            window.speechSynthesis.speak(utterance);
+        });
+    }
+    
+    // Основная функция перехода к следующему слову
+    async function nextQuestion() {
+        // Защита от одновременных вызовов
+        if (lockNextQuestion) return;
+        lockNextQuestion = true;
+        
+        // Полная остановка предыдущей активности
+        abortCurrentTimersAndSpeech();
+        disableAnswerButtons(true);
+        
+        if (!sessionActive) {
+            lockNextQuestion = false;
+            return;
+        }
+        
+        if (unmasteredIndices.length === 0) {
+            finishSession();
+            lockNextQuestion = false;
+            return;
+        }
+        
+        // Выбираем случайное невыученное слово
+        const randomPos = Math.floor(Math.random() * unmasteredIndices.length);
+        const wordIndex = unmasteredIndices[randomPos];
+        const word = wordsData[wordIndex];
+        currentWordObj = { ...word, originalIndex: wordIndex };
+        
+        const { candidateText, isMatch } = generateQuestionForWord(word, wordIndex);
+        currentCandidateText = candidateText;
+        currentIsCorrectMatch = isMatch;
+        
+        japaneseWordEl.innerText = word.jp;
+        candidateRussianEl.innerText = currentCandidateText;
+        timerDisplay.innerText = "5.0";
+        
+        // Озвучивание (с защитным таймаутом)
+        try {
+            await speakWithTimeout(word.jp, 2000);
+        } catch (e) {
+            console.warn("Ошибка речи:", e);
+        }
+        
+        // Проверяем, не завершилась ли сессия за время речи
+        if (!sessionActive) {
+            lockNextQuestion = false;
+            return;
+        }
+        
+        // Запускаем таймер 5 секунд
+        let timeLeft = 5.0;
+        timerDisplay.innerText = timeLeft.toFixed(1);
+        isAwaitingAnswer = true;
+        disableAnswerButtons(false);
+        
+        activeTimerInterval = setInterval(() => {
+            if (!isAwaitingAnswer) return;
+            timeLeft -= 0.1;
+            if (timeLeft <= 0.0) {
+                if (isAwaitingAnswer) {
+                    clearInterval(activeTimerInterval);
+                    activeTimerInterval = null;
+                    isAwaitingAnswer = false;
+                    timerDisplay.innerText = "0.0";
+                    disableAnswerButtons(true);
+                    handleTimeout();
+                }
+            } else {
+                timerDisplay.innerText = timeLeft.toFixed(1);
+            }
+        }, 100);
+        
+        activeTimeoutId = setTimeout(() => {
+            if (isAwaitingAnswer) {
+                if (activeTimerInterval) clearInterval(activeTimerInterval);
+                activeTimerInterval = null;
+                isAwaitingAnswer = false;
+                timerDisplay.innerText = "0.0";
+                disableAnswerButtons(true);
+                handleTimeout();
+            }
+        }, 5000);
+        
+        lockNextQuestion = false;
+    }
+    
+    // Обработка таймаута — не засчитываем, но переходим к следующему слову
+    function handleTimeout() {
+        if (!sessionActive) return;
+        if (!isAwaitingAnswer) return;
+        
+        // Сбрасываем флаг ожидания
+        isAwaitingAnswer = false;
+        
+        // Увеличиваем счётчик ошибок (незасчитанная попытка)
+        statsIncorrect++;
+        updateStatsUI();
+        messageArea.innerText = "⏰ Время вышло! Слово не засчитано, переходим к следующему.";
+        
+        // Принудительно снимаем возможную блокировку перед следующим вопросом
+        lockNextQuestion = false;
+        
+        // Переходим к следующему слову (оно остаётся в unmastered)
+        nextQuestion();
+    }
+    
+    function handleAnswer(userSaidYes) {
+        if (!sessionActive || !isAwaitingAnswer) return;
+        
+        // Останавливаем таймеры и речь
+        abortCurrentTimersAndSpeech();
+        disableAnswerButtons(true);
+        isAwaitingAnswer = false;
+        
+        const isAnswerCorrect = (userSaidYes && currentIsCorrectMatch) || (!userSaidYes && !currentIsCorrectMatch);
+        
+        if (isAnswerCorrect) {
+            statsCorrect++;
+            const currentIdx = currentWordObj.originalIndex;
+            const pos = unmasteredIndices.indexOf(currentIdx);
+            if (pos !== -1) {
+                unmasteredIndices.splice(pos, 1);
+            }
+            wordsData[currentIdx].mastered = true;
+            messageArea.innerText = "✅ Верно! Слово засчитано.";
+        } else {
+            statsIncorrect++;
+            messageArea.innerText = "❌ Неверно! Слово останется в наборе.";
+        }
+        updateStatsUI();
+        
+        if (unmasteredIndices.length === 0 && sessionActive) {
+            finishSession();
+        } else {
+            // Переходим к следующему слову
+            nextQuestion();
+        }
+    }
+    
+    // ---------- РАБОТА С ФАЙЛАМИ ----------
+    async function parseVocabularyFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const lines = content.split(/\r?\n/);
+                const words = [];
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line === "") continue;
+                    let separator = "|";
+                    if (line.includes("|")) separator = "|";
+                    else if (line.includes("\t")) separator = "\t";
+                    else if (line.includes(";")) separator = ";";
+                    else continue;
+                    const parts = line.split(separator);
+                    if (parts.length >= 2) {
+                        const jp = parts[0].trim();
+                        const ru = parts[1].trim();
+                        if (jp && ru) words.push({ jp, ru });
+                    }
+                }
+                resolve(words);
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsText(file, "UTF-8");
+        });
+    }
+    
+    async function loadWordsFromDirectory(files) {
+        const txtFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith(".txt"));
+        if (txtFiles.length === 0) throw new Error("В выбранной папке нет .txt файлов");
+        let allWords = [];
+        for (const file of txtFiles) {
+            try {
+                const fileWords = await parseVocabularyFile(file);
+                allWords.push(...fileWords);
+            } catch (err) {
+                console.warn(`Ошибка чтения ${file.name}:`, err);
+            }
+        }
+        if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Проверьте формат (японское|перевод)");
+        return allWords;
+    }
+    
+    function startSessionWithWords(wordsArray, stageNum) {
+        if (sessionActive) {
+            abortCurrentTimersAndSpeech();
+            sessionActive = false;
+        }
+        finalStatsPanel.innerHTML = "";
+        
+        wordsData = wordsArray.map((item, idx) => ({
+            jp: item.jp,
+            ru: item.ru,
+            mastered: false,
+            originalIndex: idx
+        }));
+        totalWordCount = wordsData.length;
+        unmasteredIndices = wordsData.map((_, idx) => idx);
+        statsCorrect = 0;
+        statsIncorrect = 0;
+        updateStatsUI();
+        
+        sessionStartTime = Date.now();
+        sessionActive = true;
+        
+        messageArea.innerText = `📖 Загружено слов: ${totalWordCount}. Начинаем изучение!`;
+        fileInfoArea.innerHTML = `✅ Активный набор: ${totalWordCount} слов (этап ${stageNum})`;
+        
+        japaneseWordEl.innerText = "⚡準備中⚡";
+        candidateRussianEl.innerText = "...";
+        timerDisplay.innerText = "5.0";
+        
+        lockNextQuestion = false;
+        nextQuestion();
+    }
+    
+    function openFolderPicker(stageNum) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.webkitdirectory = true;
+        input.directory = true;
+        input.multiple = true;
+        
+        input.onchange = async (event) => {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+            messageArea.innerText = "⏳ Загрузка и разбор файлов...";
+            fileInfoArea.innerHTML = "⏳ Обрабатываются файлы...";
+            disableAnswerButtons(true);
+            try {
+                const words = await loadWordsFromDirectory(files);
+                startSessionWithWords(words, stageNum);
+            } catch (err) {
+                console.error(err);
+                messageArea.innerText = `❌ Ошибка: ${err.message}`;
+                fileInfoArea.innerHTML = "⚠️ Не удалось загрузить слова. Попробуйте другую папку.";
+                disableAnswerButtons(true);
+                sessionActive = false;
+                japaneseWordEl.innerText = "⚠️ Ошибка";
+                candidateRussianEl.innerText = "нет данных";
+                totalStageWordsSpan.innerText = "0";
+                remainingWordsSpan.innerText = "0";
+            }
+            input.remove();
+        };
+        input.click();
+    }
+    
+    function setStage(stageNum) {
+        currentStage = stageNum;
+        document.querySelectorAll(".stage-btn").forEach(btn => {
+            const sVal = parseInt(btn.getAttribute("data-stage"));
+            if (sVal === stageNum) btn.classList.add("active");
+            else btn.classList.remove("active");
+        });
+        openFolderPicker(stageNum);
+    }
+    
+    function bindEvents() {
+        document.querySelectorAll(".stage-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const stageVal = parseInt(btn.getAttribute("data-stage"));
+                if (!isNaN(stageVal)) setStage(stageVal);
+            });
+        });
+        yesBtn.addEventListener("click", () => handleAnswer(true));
+        noBtn.addEventListener("click", () => handleAnswer(false));
+    }
+    
+    function startApp() {
+        bindEvents();
+        sessionActive = false;
+        disableAnswerButtons(true);
+        messageArea.innerText = "🗂️ Нажмите на любой этап и выберите папку с текстовыми файлами (.txt)";
+        fileInfoArea.innerHTML = "Формат файлов: каждая строка: японское слово|перевод (например: ねこ|кошка)";
+        totalStageWordsSpan.innerText = "0";
+        remainingWordsSpan.innerText = "0";
+        correctCountSpan.innerText = "0";
+        wrongCountSpan.innerText = "0";
+        japaneseWordEl.innerText = "📁 выберите папку";
+        candidateRussianEl.innerText = "ожидание...";
+    }
+    
+    startApp();
+</script>
+</body>
+</html>
