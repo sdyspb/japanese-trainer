@@ -1,3 +1,5 @@
+<img width="763" height="1202" alt="image" src="https://github.com/user-attachments/assets/ada4e8f9-1ccb-45f4-8ada-4f6690c170c2" />
+
 # Японский тренажёр
 
 Приложение для запоминания японских слов методом «да/нет» с таймером и озвучиванием
