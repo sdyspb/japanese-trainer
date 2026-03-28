@@ -13,3 +13,19 @@
 ## Как подготовить словарь
 Словарь - это файл, содержащий слова в формате `.txt`, например:
 **シャンプー|шампунь**
+
+## Структура приложения
+```text
+japanese-trainer/
+├── index.html
+├── README.md
+├── .gitignore
+└── words/                      # папка со словарями (будет доступна для выбора)
+    ├── 1_sushchestvitelnye/
+    │   ├── zhivotnye.txt
+    │   └── rasteniya.txt
+    ├── 2_prilagatelnye/
+    │   └── osnovnye.txt
+    └── 3_glagoly/
+        └── dejstviya.txt
+```
