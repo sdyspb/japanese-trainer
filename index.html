@@ -269,7 +269,6 @@
             transform: scale(0.98);
         }
 
-        /* Стиль для ссылки на GitHub */
         .github-link {
             text-align: center;
             margin-top: 20px;
@@ -308,9 +307,8 @@
 </head>
 <body>
 
-<div class="study-container" id="app">
+<div class="study-container" id="appContainer">
     <h1>📖 800語 学習中</h1>
-    <!-- В подзаголовке теперь инструкция -->
     <div class="sub">📁 Нажмите на любой этап и выберите папку с текстовыми файлами</div>
 
     <div class="stage-selector" id="stageSelector">
@@ -341,21 +339,19 @@
             <span>🔄 всего слов: <strong id="totalStageWords">0</strong></span>
         </div>
 
-        <!-- Вместо дублирующейся инструкции – мудрость -->
         <div class="message-area" id="messageArea">
             出る釘は打たれ — Выступающий гвоздь забивают
         </div>
     </div>
 
     <div class="screenshot-wrapper">
-        <button id="screenshotBtn" class="screenshot-btn">📸 Скриншот</button>
+        <button id="screenshotBtn" class="screenshot-btn">📸 Скриншот всего экрана</button>
     </div>
 
     <div id="fileInfoArea" class="file-info"></div>
     <div id="finalStatsPanel" style="min-height: 70px;"></div>
     <footer>🎧 слово озвучивается → таймер 10с → жми ДА/НЕТ<br>⏰ Если не ответить за 10 секунд — сессия остановится (нужно выбрать папку заново)</footer>
 
-    <!-- Ссылка на GitHub (внизу) -->
     <div class="github-link">
         <a href="https://github.com/sdyspb/japanese-trainer" target="_blank" rel="noopener noreferrer">
             <svg height="16" viewBox="0 0 16 16" width="16" style="fill: currentColor;">
@@ -387,6 +383,7 @@
     let lockNextQuestion = false;
     
     // DOM
+    const appContainer = document.getElementById("appContainer");
     const japaneseWordEl = document.getElementById("japaneseWord");
     const candidateRussianEl = document.getElementById("candidateRussian");
     const timerDisplay = document.getElementById("timerDisplay");
@@ -400,7 +397,6 @@
     const finalStatsPanel = document.getElementById("finalStatsPanel");
     const fileInfoArea = document.getElementById("fileInfoArea");
     const screenshotBtn = document.getElementById("screenshotBtn");
-    const screenshotArea = document.getElementById("screenshotArea");
     
     function updateStatsUI() {
         correctCountSpan.innerText = statsCorrect;
@@ -623,19 +619,24 @@
         }
     }
     
-    // ---------- СКРИНШОТ ----------
-    function takeScreenshot() {
-        if (!screenshotArea) return;
+    // ---------- СКРИНШОТ ВСЕГО КОНТЕЙНЕРА ----------
+    function takeFullScreenshot() {
+        if (!appContainer) return;
         const originalMsg = messageArea.innerText;
-        messageArea.innerText = "📸 Создание скриншота...";
-        html2canvas(screenshotArea, {
+        messageArea.innerText = "📸 Создание скриншота всего приложения...";
+        // Отключаем кнопки на время скриншота, чтобы не мешали (но это необязательно)
+        const wasDisabled = yesBtn.disabled;
+        disableAnswerButtons(true);
+        
+        html2canvas(appContainer, {
             scale: 2,
             backgroundColor: '#ffffff',
             logging: false,
-            useCORS: false
+            useCORS: false,
+            allowTaint: false
         }).then(canvas => {
             const link = document.createElement('a');
-            link.download = 'japanese_trainer_screenshot.png';
+            link.download = 'japanese_trainer_full_screenshot.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
             messageArea.innerText = originalMsg || "Скриншот сохранён!";
@@ -644,12 +645,23 @@
                     messageArea.innerText = originalMsg;
                 }
             }, 2000);
+            // Восстанавливаем состояние кнопок, если сессия активна и ожидает ответа
+            if (sessionActive && isAwaitingAnswer) {
+                disableAnswerButtons(false);
+            } else {
+                disableAnswerButtons(wasDisabled);
+            }
         }).catch(error => {
             console.error('Ошибка скриншота:', error);
             messageArea.innerText = "❌ Не удалось сделать скриншот";
             setTimeout(() => {
                 messageArea.innerText = originalMsg;
             }, 2000);
+            if (sessionActive && isAwaitingAnswer) {
+                disableAnswerButtons(false);
+            } else {
+                disableAnswerButtons(wasDisabled);
+            }
         });
     }
     
@@ -783,14 +795,13 @@
         });
         yesBtn.addEventListener("click", () => handleAnswer(true));
         noBtn.addEventListener("click", () => handleAnswer(false));
-        screenshotBtn.addEventListener("click", takeScreenshot);
+        screenshotBtn.addEventListener("click", takeFullScreenshot);
     }
     
     function startApp() {
         bindEvents();
         sessionActive = false;
         disableAnswerButtons(true);
-        // Начальное сообщение уже установлено в HTML (мудрость), не перезаписываем
         fileInfoArea.innerHTML = "Формат файлов: каждая строка: японское слово|перевод (например: ねこ|кошка)";
         totalStageWordsSpan.innerText = "0";
         remainingWordsSpan.innerText = "0";
