@@ -12,7 +12,7 @@
         }
 
         body {
-            background: linear-gradient(145deg, #f7f3e9 0%, #fff4e6 100%);
+            transition: background 0.3s, color 0.3s;
             font-family: 'Segoe UI', 'Noto Sans', system-ui, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
             min-height: 100vh;
             display: flex;
@@ -22,17 +22,68 @@
             margin: 0;
         }
 
+        body.light {
+            background: linear-gradient(145deg, #f7f3e9 0%, #fff4e6 100%);
+            --bg-container: rgba(255, 250, 240, 0.95);
+            --border-color: #ffe6c7;
+            --shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            --panel-bg: #ffffffd9;
+            --word-bg: #fef3e4;
+            --candidate-bg: #fff5ec;
+            --stats-bg: #f7ede2;
+            --text-primary: #2c221b;
+            --text-secondary: #9b6a4c;
+            --btn-yes: #2e7d32;
+            --btn-no: #b33c2c;
+            --screenshot-bg: #5d7a9c;
+            --screenshot-hover: #3e5a7c;
+            --github-bg: #f0ebe4;
+            --modal-bg: #fffaf2;
+            --stage-selector-bg: #fff0e0;
+            --stage-btn-bg: #fae6d2;
+            --stage-btn-color: #a55d2a;
+            --stage-btn-active-bg: #d95b2a;
+            --stage-btn-active-color: white;
+            --footer-color: #9b6a4c;
+        }
+
+        body.dark {
+            background: #0a0a0a;
+            --bg-container: #111111;
+            --border-color: #2a2a2a;
+            --shadow: 0 25px 45px rgba(0, 0, 0, 0.8);
+            --panel-bg: #1a1a1a;
+            --word-bg: #1f1f1f;
+            --candidate-bg: #1f1f1f;
+            --stats-bg: #141414;
+            --text-primary: #f5f5f5;
+            --text-secondary: #cccccc;
+            --btn-yes: #2c6e2f;
+            --btn-no: #a54232;
+            --screenshot-bg: #2c2c2c;
+            --screenshot-hover: #4a4a4a;
+            --github-bg: #1f1f1f;
+            --modal-bg: #1a1a1a;
+            --stage-selector-bg: #1a1a1a;
+            --stage-btn-bg: #2c2c2c;
+            --stage-btn-color: #dddddd;
+            --stage-btn-active-bg: #d95b2a;
+            --stage-btn-active-color: white;
+            --footer-color: #dddddd;
+        }
+
         .study-container {
             max-width: 720px;
             width: 100%;
-            background: rgba(255, 250, 240, 0.95);
+            background: var(--bg-container);
             backdrop-filter: blur(2px);
             border-radius: 56px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow);
             overflow: hidden;
             padding: 28px 24px 36px;
             transition: all 0.2s ease;
-            border: 1px solid #ffe6c7;
+            border: 1px solid var(--border-color);
+            position: relative;
         }
 
         h1 {
@@ -45,11 +96,37 @@
             color: transparent;
             letter-spacing: -0.3px;
             text-align: center;
+            position: relative;
+        }
+
+        .settings-btn {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #a55d2a;
+            transition: 0.2s;
+            padding: 0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #fff0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .settings-btn:hover {
+            background: #ffe0c4;
+            transform: scale(1.02);
         }
 
         .sub {
             text-align: center;
-            color: #9b6a4c;
+            color: var(--text-secondary);
             font-weight: 500;
             font-size: 0.9rem;
             margin-bottom: 28px;
@@ -58,7 +135,7 @@
         }
 
         .stage-selector {
-            background: #fff0e0;
+            background: var(--stage-selector-bg);
             border-radius: 60px;
             padding: 8px 12px;
             display: flex;
@@ -69,22 +146,22 @@
         }
 
         .stage-btn {
-            background: #fae6d2;
+            background: var(--stage-btn-bg);
             border: none;
             font-size: 1rem;
             font-weight: 600;
             padding: 8px 18px;
             border-radius: 40px;
             cursor: pointer;
-            color: #a55d2a;
+            color: var(--stage-btn-color);
             transition: 0.2s;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             font-family: inherit;
         }
 
         .stage-btn.active {
-            background: #d95b2a;
-            color: white;
+            background: var(--stage-btn-active-bg);
+            color: var(--stage-btn-active-color);
             box-shadow: 0 6px 12px rgba(217, 91, 42, 0.3);
         }
 
@@ -92,9 +169,12 @@
             background: #ffddbb;
             transform: scale(0.96);
         }
+        body.dark .stage-btn:hover:not(.active) {
+            background: #3a3a3a;
+        }
 
         .quiz-panel {
-            background: #ffffffd9;
+            background: var(--panel-bg);
             border-radius: 48px;
             padding: 28px 20px 24px;
             margin: 12px 0 24px;
@@ -106,27 +186,45 @@
             font-weight: 800;
             text-align: center;
             letter-spacing: 2px;
-            background: #fef3e4;
+            background: var(--word-bg);
             padding: 20px 10px;
             border-radius: 56px;
             margin-bottom: 28px;
-            color: #2c221b;
+            color: var(--text-primary);
             word-break: break-word;
             font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans CJK JP', sans-serif;
             box-shadow: 0 3px 6px #0001 inset;
         }
 
+        .welcome-symbol {
+            background: var(--word-bg);
+            border-radius: 48px;
+            margin-bottom: 28px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
         .candidate-russian {
-            background: #fff5ec;
+            background: var(--candidate-bg);
             border-radius: 40px;
             padding: 20px 12px;
             text-align: center;
             font-size: 1.6rem;
             font-weight: 600;
-            color: #2d3e50;
+            color: var(--text-primary);
             border: 2px solid #ffe0bf;
             margin-bottom: 24px;
             word-break: break-word;
+        }
+        body.dark .candidate-russian {
+            border-color: #4a4a4a;
         }
 
         .timer-area {
@@ -150,7 +248,7 @@
 
         .timer-label {
             font-size: 1rem;
-            color: #9b6e4e;
+            color: var(--text-secondary);
         }
 
         .action-buttons {
@@ -174,7 +272,7 @@
         }
 
         .btn-yes {
-            background: #2e7d32;
+            background: var(--btn-yes);
             color: white;
         }
         .btn-yes:active {
@@ -182,7 +280,7 @@
             box-shadow: 0 2px 0 #1b5e20;
         }
         .btn-no {
-            background: #b33c2c;
+            background: var(--btn-no);
             color: white;
         }
         .btn-no:active {
@@ -199,7 +297,7 @@
         .stats-row {
             display: flex;
             justify-content: space-between;
-            background: #f7ede2;
+            background: var(--stats-bg);
             padding: 12px 20px;
             border-radius: 50px;
             font-weight: 500;
@@ -207,6 +305,10 @@
             font-size: 0.9rem;
             flex-wrap: wrap;
             gap: 12px;
+            color: var(--text-primary);
+        }
+        .stats-row strong {
+            color: #ffaa66;
         }
 
         .message-area {
@@ -216,26 +318,19 @@
             color: #c26e3c;
             font-weight: 500;
         }
+        body.dark .message-area {
+            color: #ffaa66;
+        }
 
         .final-stats {
-            background: #e9dccc;
+            background: var(--stats-bg);
             border-radius: 32px;
-            padding: 18px;
+            padding: 16px 18px;
             margin-top: 20px;
             text-align: center;
             font-weight: bold;
-            color: #2c3e2b;
+            color: var(--text-primary);
             border-left: 6px solid #e67e22;
-        }
-
-        .file-info {
-            background: #e9e0d3;
-            border-radius: 30px;
-            padding: 10px 15px;
-            margin-top: 12px;
-            font-size: 0.8rem;
-            text-align: center;
-            color: #6b4c34;
         }
 
         .warning {
@@ -245,6 +340,11 @@
             padding: 10px;
             border-radius: 20px;
         }
+        body.dark .warning {
+            background: #332200;
+            color: #ffcc88;
+            border-left-color: #ffaa33;
+        }
 
         .screenshot-wrapper {
             display: flex;
@@ -253,7 +353,7 @@
             margin-bottom: 10px;
         }
         .screenshot-btn {
-            background: #5d7a9c;
+            background: var(--screenshot-bg);
             color: white;
             border: none;
             font-size: 1rem;
@@ -265,7 +365,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .screenshot-btn:hover {
-            background: #3e5a7c;
+            background: var(--screenshot-hover);
             transform: scale(0.98);
         }
 
@@ -283,7 +383,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #f0ebe4;
+            background: var(--github-bg);
             padding: 6px 14px;
             border-radius: 40px;
             border: 1px solid #e0cfbc;
@@ -292,33 +392,144 @@
             opacity: 1;
             background: #e6ddd2;
             color: #3e5a7c;
-            text-decoration: none;
+        }
+        body.dark .github-link a {
+            background: #2c2c2c;
+            color: #cccccc;
+            border-color: #3a3a3a;
+        }
+        body.dark .github-link a:hover {
+            background: #3a3a3a;
+            color: white;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--footer-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--modal-bg);
+            border-radius: 48px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+            border: 1px solid #f0cfb0;
+            color: var(--text-primary);
+        }
+        .modal-content h3 {
+            margin: 0 0 20px 0;
+            color: #b35f2c;
+            text-align: center;
+        }
+        .modal-field {
+            margin-bottom: 15px;
+        }
+        .modal-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .modal-field input, .modal-field select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid #e0cfbc;
+            background: white;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            background: #d95b2a;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .modal-buttons button.reset-btn {
+            background: #8b6b4f;
+        }
+        .modal-buttons button:hover {
+            transform: scale(0.98);
+            opacity: 0.9;
         }
 
         @media (max-width: 550px) {
-            .japanese-word { font-size: 2rem; }
-            .candidate-russian { font-size: 1.2rem; }
-            .btn { font-size: 1.4rem; padding: 10px 16px; width: 110px; }
-            .study-container { padding: 18px; }
-            .screenshot-btn { font-size: 0.9rem; padding: 6px 18px; }
-            .github-link { font-size: 0.7rem; }
+            .study-container { padding: 16px 16px 24px; }
+            h1 { font-size: 1.4rem; }
+            .settings-btn { top: 12px; right: 16px; width: 32px; height: 32px; font-size: 1.2rem; }
+            .sub { font-size: 0.75rem; margin-bottom: 20px; padding-bottom: 8px; }
+            .stage-selector { gap: 8px; padding: 6px 8px; margin-bottom: 20px; }
+            .stage-btn { font-size: 0.8rem; padding: 6px 12px; }
+            .quiz-panel { padding: 20px 12px 16px; margin: 8px 0 16px; }
+            .japanese-word { font-size: 2rem; padding: 16px 8px; margin-bottom: 20px; }
+            .candidate-russian { font-size: 1.3rem; padding: 16px 8px; margin-bottom: 20px; }
+            .timer-clock { font-size: 1.6rem; padding: 4px 12px; }
+            .timer-label { font-size: 0.8rem; }
+            .action-buttons { gap: 16px; margin: 8px 0; }
+            .btn { font-size: 1.4rem; padding: 10px 0; width: 110px; }
+            .stats-row { padding: 10px 12px; font-size: 0.75rem; gap: 8px; justify-content: center; }
+            .stats-row span { flex: 1 1 40%; text-align: center; }
+            .message-area { font-size: 0.8rem; margin-top: 12px; }
+            .screenshot-btn { font-size: 0.85rem; padding: 8px 20px; }
+            .github-link { margin-top: 16px; font-size: 0.7rem; }
+            .github-link a { padding: 4px 10px; }
+            footer { font-size: 0.65rem; }
+            .modal-content { padding: 20px; }
+            .welcome-symbol { font-size: 1.4rem; padding: 12px; min-height: 70px; }
+        }
+        @media (max-width: 400px) {
+            .stats-row span { flex: 1 1 100%; text-align: center; }
+            .action-buttons { gap: 12px; }
+            .btn { width: 100px; font-size: 1.2rem; }
+            .japanese-word { font-size: 1.8rem; }
+            .candidate-russian { font-size: 1.1rem; }
         }
     </style>
 </head>
-<body>
+<body class="light">
 
 <div class="study-container" id="appContainer">
-    <h1>📖 800語 学習中</h1>
-    <div class="sub">📁 Нажмите на любой этап и выберите папку с текстовыми файлами</div>
+    <h1>📖 800語 学習中
+        <button class="settings-btn" id="settingsBtn" title="Настройки">⚙️</button>
+    </h1>
+    <div class="sub">📁 Нажми на любой этап и выбери папку с текстовыми файлами</div>
 
     <div class="stage-selector" id="stageSelector">
-        <button data-stage="1" class="stage-btn">📁 Этап 1</button>
-        <button data-stage="2" class="stage-btn">📁 Этап 2</button>
-        <button data-stage="3" class="stage-btn">📁 Этап 3</button>
+        <button data-stage="1" class="stage-btn">Этап 1</button>
+        <button data-stage="2" class="stage-btn">Этап 2</button>
+        <button data-stage="3" class="stage-btn">Этап 3</button>
+        <button data-stage="4" class="stage-btn">Этап 4</button>
+        <button data-stage="5" class="stage-btn">Этап 5</button>
     </div>
 
     <div class="quiz-panel" id="screenshotArea">
-        <div class="japanese-word" id="japaneseWord">----</div>
+        <div id="welcomePlaceholder" class="welcome-symbol">日本語トレーナー</div>
         <div class="candidate-russian" id="candidateRussian">----</div>
 
         <div class="timer-area">
@@ -348,9 +559,8 @@
         <button id="screenshotBtn" class="screenshot-btn">📸 Скриншот всего экрана</button>
     </div>
 
-    <div id="fileInfoArea" class="file-info"></div>
     <div id="finalStatsPanel" style="min-height: 70px;"></div>
-    <footer>🎧 слово озвучивается → таймер 10с → жми ДА/НЕТ<br>⏰ Если не ответить за 10 секунд — сессия остановится (нужно выбрать папку заново)</footer>
+    <footer>🎧 слово озвучивается → таймер 10с → жми ДА/НЕТ<br>⏰ Если не ответить за 10 секунд — сессия остановится (выбери папку заново)</footer>
 
     <div class="github-link">
         <a href="https://github.com/sdyspb/japanese-trainer" target="_blank" rel="noopener noreferrer">
@@ -362,8 +572,37 @@
     </div>
 </div>
 
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h3>⚙️ Настройки</h3>
+        <div class="modal-field">
+            <label>Названия этапов</label>
+            <div id="stageNamesFields"></div>
+        </div>
+        <div class="modal-field">
+            <label>Голос для озвучивания</label>
+            <select id="voiceSelect">
+                <option value="female">🌸 Женский (нежный)</option>
+                <option value="male">⚔️ Мужской (самурайский)</option>
+            </select>
+        </div>
+        <div class="modal-field">
+            <label>Тема оформления</label>
+            <select id="themeSelect">
+                <option value="light">☀️ Светлая</option>
+                <option value="dark">🌙 Тёмная</option>
+            </select>
+        </div>
+        <div class="modal-buttons">
+            <button id="saveSettingsBtn">Сохранить</button>
+            <button id="resetSettingsBtn" class="reset-btn">Сбросить</button>
+            <button id="closeSettingsBtn">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // ---------------------- СОСТОЯНИЕ --------------------------
+    const stageWordsStore = {};
     let currentStage = 1;
     let wordsData = [];
     let unmasteredIndices = [];
@@ -382,9 +621,11 @@
     let isAwaitingAnswer = false;
     let lockNextQuestion = false;
     
-    // DOM
+    let selectedVoiceGender = "female";
+    let currentTheme = "light";
+    
     const appContainer = document.getElementById("appContainer");
-    const japaneseWordEl = document.getElementById("japaneseWord");
+    const welcomePlaceholder = document.getElementById("welcomePlaceholder");
     const candidateRussianEl = document.getElementById("candidateRussian");
     const timerDisplay = document.getElementById("timerDisplay");
     const yesBtn = document.getElementById("yesBtn");
@@ -395,8 +636,166 @@
     const totalStageWordsSpan = document.getElementById("totalStageWords");
     const messageArea = document.getElementById("messageArea");
     const finalStatsPanel = document.getElementById("finalStatsPanel");
-    const fileInfoArea = document.getElementById("fileInfoArea");
     const screenshotBtn = document.getElementById("screenshotBtn");
+    const stageSelector = document.getElementById("stageSelector");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsModal = document.getElementById("settingsModal");
+    const stageNamesFields = document.getElementById("stageNamesFields");
+    const voiceSelect = document.getElementById("voiceSelect");
+    const themeSelect = document.getElementById("themeSelect");
+    const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+    const resetSettingsBtn = document.getElementById("resetSettingsBtn");
+    const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+    
+    const defaultStageNames = ["Этап 1", "Этап 2", "Этап 3", "Этап 4", "Этап 5"];
+    let stageNames = [...defaultStageNames];
+    
+    function applyTheme(theme) {
+        document.body.classList.remove("light", "dark");
+        document.body.classList.add(theme);
+        currentTheme = theme;
+        localStorage.setItem("japaneseTrainerTheme", theme);
+    }
+    
+    function loadSettings() {
+        const savedNames = localStorage.getItem("japaneseTrainerStageNames");
+        if (savedNames) {
+            try {
+                const parsed = JSON.parse(savedNames);
+                if (Array.isArray(parsed) && parsed.length === 5) stageNames = parsed;
+            } catch(e) {}
+        }
+        updateStageButtons();
+        
+        const savedVoice = localStorage.getItem("japaneseTrainerVoice");
+        if (savedVoice === "male" || savedVoice === "female") {
+            selectedVoiceGender = savedVoice;
+            if (voiceSelect) voiceSelect.value = savedVoice;
+        } else {
+            selectedVoiceGender = "female";
+            if (voiceSelect) voiceSelect.value = "female";
+        }
+        
+        const savedTheme = localStorage.getItem("japaneseTrainerTheme");
+        if (savedTheme === "light" || savedTheme === "dark") {
+            applyTheme(savedTheme);
+            if (themeSelect) themeSelect.value = savedTheme;
+        } else {
+            applyTheme("light");
+            if (themeSelect) themeSelect.value = "light";
+        }
+    }
+    
+    function saveSettings() {
+        localStorage.setItem("japaneseTrainerStageNames", JSON.stringify(stageNames));
+        localStorage.setItem("japaneseTrainerVoice", selectedVoiceGender);
+        updateStageButtons();
+    }
+    
+    function updateStageButtons() {
+        const btns = stageSelector.querySelectorAll(".stage-btn");
+        for (let i = 0; i < btns.length && i < stageNames.length; i++) {
+            btns[i].textContent = stageNames[i];
+        }
+    }
+    
+    function populateModalFields() {
+        stageNamesFields.innerHTML = "";
+        for (let i = 0; i < 5; i++) {
+            const div = document.createElement("div");
+            div.className = "modal-field";
+            const label = document.createElement("label");
+            label.textContent = `Этап ${i+1}:`;
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = stageNames[i];
+            input.placeholder = defaultStageNames[i];
+            input.setAttribute("data-stage-idx", i);
+            div.appendChild(label);
+            div.appendChild(input);
+            stageNamesFields.appendChild(div);
+        }
+        voiceSelect.value = selectedVoiceGender;
+        themeSelect.value = currentTheme;
+    }
+    
+    function applyModalChanges() {
+        const inputs = stageNamesFields.querySelectorAll("input");
+        const newNames = [];
+        inputs.forEach(input => {
+            let val = input.value.trim();
+            if (val === "") val = defaultStageNames[parseInt(input.getAttribute("data-stage-idx"))];
+            newNames.push(val);
+        });
+        stageNames = newNames;
+        selectedVoiceGender = voiceSelect.value;
+        const newTheme = themeSelect.value;
+        if (newTheme !== currentTheme) applyTheme(newTheme);
+        saveSettings();
+        settingsModal.style.display = "none";
+    }
+    
+    function resetToDefault() {
+        stageNames = [...defaultStageNames];
+        selectedVoiceGender = "female";
+        applyTheme("light");
+        saveSettings();
+        updateStageButtons();
+        populateModalFields();
+    }
+    
+    function getVoiceForGender(gender) {
+        if (!window.speechSynthesis) return null;
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices.length) return null;
+        const japaneseVoices = voices.filter(v => v.lang.startsWith("ja"));
+        if (gender === "male") {
+            let maleVoice = japaneseVoices.find(v => v.name.includes("Male") || v.name.includes("Taro") || v.name.includes("Otoya") || v.name.toLowerCase().includes("man"));
+            if (!maleVoice) maleVoice = japaneseVoices.find(v => !v.name.includes("Female") && !v.name.includes("Kyoko") && !v.name.includes("Samantha"));
+            if (maleVoice) return maleVoice;
+            if (japaneseVoices.length) return japaneseVoices[0];
+            return voices[0];
+        } else {
+            let femaleVoice = japaneseVoices.find(v => v.name.includes("Female") || v.name.includes("Kyoko") || v.name.includes("Samantha") || v.name.includes("Yuna"));
+            if (femaleVoice) return femaleVoice;
+            if (japaneseVoices.length) return japaneseVoices[0];
+            return voices[0];
+        }
+    }
+    
+    async function speakWithSelectedVoice(text) {
+        if (!window.speechSynthesis) return;
+        return new Promise((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "ja-JP";
+            utterance.rate = 0.9;
+            const voice = getVoiceForGender(selectedVoiceGender);
+            if (voice) utterance.voice = voice;
+            let resolved = false;
+            const timer = setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    window.speechSynthesis.cancel();
+                    resolve();
+                }
+            }, 2000);
+            utterance.onend = () => {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+            };
+            utterance.onerror = () => {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+            };
+            window.speechSynthesis.speak(utterance);
+        });
+    }
     
     function updateStatsUI() {
         correctCountSpan.innerText = statsCorrect;
@@ -414,11 +813,8 @@
     function generateQuestionForWord(word, wordIndex) {
         const isCorrectVariant = Math.random() < 0.5;
         let candidate;
-        if (isCorrectVariant) {
-            candidate = word.ru;
-        } else {
-            candidate = getRandomIncorrectRussian(word.ru, wordIndex);
-        }
+        if (isCorrectVariant) candidate = word.ru;
+        else candidate = getRandomIncorrectRussian(word.ru, wordIndex);
         return { candidateText: candidate, isMatch: (candidate === word.ru) };
     }
     
@@ -441,8 +837,9 @@
         disableAnswerButtons(true);
         messageArea.innerHTML = `<span class="warning">⚠️ ${message} ⚠️</span>`;
         finalStatsPanel.innerHTML = "";
-        japaneseWordEl.innerText = "⏸️ сессия остановлена";
-        candidateRussianEl.innerText = "выберите папку заново";
+        welcomePlaceholder.style.display = "flex";
+        if (document.getElementById("japaneseWord")) document.getElementById("japaneseWord").remove();
+        candidateRussianEl.innerText = "выбери этап заново";
         timerDisplay.innerText = "0.0";
         wordsData = [];
         unmasteredIndices = [];
@@ -450,7 +847,6 @@
         statsIncorrect = 0;
         totalWordCount = 0;
         updateStatsUI();
-        fileInfoArea.innerHTML = "⚠️ Для продолжения выберите папку снова";
     }
     
     function finishSession() {
@@ -459,52 +855,47 @@
         abortCurrentTimersAndSpeech();
         disableAnswerButtons(true);
         const totalTimeSec = ((Date.now() - sessionStartTime) / 1000).toFixed(1);
+        
+        const totalAttempts = statsCorrect + statsIncorrect;
+        let grade = 1;
+        if (totalAttempts > 0) {
+            const percent = (statsCorrect / totalAttempts) * 100;
+            if (percent >= 90) grade = 5;
+            else if (percent >= 80) grade = 4;
+            else if (percent >= 70) grade = 3;
+            else if (percent >= 60) grade = 2;
+            else grade = 1;
+        }
+        const gradeText = grade === 5 ? "秀" : grade === 4 ? "優" : grade === 3 ? "良" : grade === 2 ? "可" : "不可";
+        
+        // Фразы для озвучивания
+        let phrase = "";
+        if (grade === 5) phrase = "素晴らしい、ご";
+        else if (grade === 4) phrase = "良い、よん";
+        else if (grade === 3) phrase = "普通、さん";
+        else if (grade === 2) phrase = "頑張って、に";
+        else phrase = "残念、いち";
+        
+        // Озвучиваем фразу после отображения
+        setTimeout(() => {
+            speakWithSelectedVoice(phrase);
+        }, 200);
+        
         finalStatsPanel.innerHTML = `
             <div class="final-stats">
-                🎉 ВСЕ СЛОВА ВЫУЧЕНЫ! 🎉<br>
+                <div style="font-size: 2rem; font-weight: 800; margin-bottom: 8px;">${gradeText}</div>
                 ⏱️ Общее время: ${totalTimeSec} сек<br>
                 ✅ Правильных ответов: ${statsCorrect}<br>
                 ❌ Неправильных ответов: ${statsIncorrect}<br>
                 📖 Всего слов в наборе: ${totalWordCount}<br>
-                🔁 Всего попыток: ${statsCorrect + statsIncorrect}
+                🔁 Всего попыток: ${totalAttempts}
             </div>
         `;
-        messageArea.innerText = "🏆 Этап завершён! Выберите другую папку для изучения.";
-        japaneseWordEl.innerText = "🎌 完成 🎌";
-        candidateRussianEl.innerText = "✨ отлично ✨";
+        messageArea.innerText = "🏆 Этап завершён! Выбери другой этап для изучения.";
+        welcomePlaceholder.style.display = "flex";
+        if (document.getElementById("japaneseWord")) document.getElementById("japaneseWord").remove();
+        candidateRussianEl.innerText = gradeText;
         timerDisplay.innerText = "0.0";
-    }
-    
-    async function speakWithTimeout(text, timeoutMs = 2000) {
-        if (!window.speechSynthesis) return;
-        return new Promise((resolve) => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = "ja-JP";
-            utterance.rate = 0.9;
-            let resolved = false;
-            const timer = setTimeout(() => {
-                if (!resolved) {
-                    resolved = true;
-                    window.speechSynthesis.cancel();
-                    resolve();
-                }
-            }, timeoutMs);
-            utterance.onend = () => {
-                if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timer);
-                    resolve();
-                }
-            };
-            utterance.onerror = () => {
-                if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timer);
-                    resolve();
-                }
-            };
-            window.speechSynthesis.speak(utterance);
-        });
     }
     
     async function nextQuestion() {
@@ -533,12 +924,22 @@
         currentCandidateText = candidateText;
         currentIsCorrectMatch = isMatch;
         
-        japaneseWordEl.innerText = word.jp;
+        if (welcomePlaceholder.style.display !== "none") {
+            welcomePlaceholder.style.display = "none";
+            if (!document.getElementById("japaneseWord")) {
+                const newWordEl = document.createElement("div");
+                newWordEl.className = "japanese-word";
+                newWordEl.id = "japaneseWord";
+                welcomePlaceholder.parentNode.insertBefore(newWordEl, welcomePlaceholder.nextSibling);
+            }
+        }
+        const japaneseWordElem = document.getElementById("japaneseWord");
+        if (japaneseWordElem) japaneseWordElem.innerText = word.jp;
         candidateRussianEl.innerText = currentCandidateText;
         timerDisplay.innerText = "10.0";
         
         try {
-            await speakWithTimeout(word.jp, 2000);
+            await speakWithSelectedVoice(word.jp);
         } catch (e) { }
         
         if (!sessionActive) {
@@ -586,7 +987,7 @@
         if (!sessionActive) return;
         if (!isAwaitingAnswer) return;
         isAwaitingAnswer = false;
-        stopSessionWithWarning("Хватит спать! Сессия остановлена. Выберите папку заново.");
+        stopSessionWithWarning("Хватит спать! Сессия остановлена. Выбери папку заново.");
     }
     
     function handleAnswer(userSaidYes) {
@@ -601,9 +1002,7 @@
             statsCorrect++;
             const currentIdx = currentWordObj.originalIndex;
             const pos = unmasteredIndices.indexOf(currentIdx);
-            if (pos !== -1) {
-                unmasteredIndices.splice(pos, 1);
-            }
+            if (pos !== -1) unmasteredIndices.splice(pos, 1);
             wordsData[currentIdx].mastered = true;
             messageArea.innerText = "✅ Верно! Слово засчитано.";
         } else {
@@ -612,60 +1011,10 @@
         }
         updateStatsUI();
         
-        if (unmasteredIndices.length === 0 && sessionActive) {
-            finishSession();
-        } else {
-            nextQuestion();
-        }
+        if (unmasteredIndices.length === 0 && sessionActive) finishSession();
+        else nextQuestion();
     }
     
-    // ---------- СКРИНШОТ ВСЕГО КОНТЕЙНЕРА ----------
-    function takeFullScreenshot() {
-        if (!appContainer) return;
-        const originalMsg = messageArea.innerText;
-        messageArea.innerText = "📸 Создание скриншота всего приложения...";
-        // Отключаем кнопки на время скриншота, чтобы не мешали (но это необязательно)
-        const wasDisabled = yesBtn.disabled;
-        disableAnswerButtons(true);
-        
-        html2canvas(appContainer, {
-            scale: 2,
-            backgroundColor: '#ffffff',
-            logging: false,
-            useCORS: false,
-            allowTaint: false
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'japanese_trainer_full_screenshot.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            messageArea.innerText = originalMsg || "Скриншот сохранён!";
-            setTimeout(() => {
-                if (messageArea.innerText === "Скриншот сохранён!") {
-                    messageArea.innerText = originalMsg;
-                }
-            }, 2000);
-            // Восстанавливаем состояние кнопок, если сессия активна и ожидает ответа
-            if (sessionActive && isAwaitingAnswer) {
-                disableAnswerButtons(false);
-            } else {
-                disableAnswerButtons(wasDisabled);
-            }
-        }).catch(error => {
-            console.error('Ошибка скриншота:', error);
-            messageArea.innerText = "❌ Не удалось сделать скриншот";
-            setTimeout(() => {
-                messageArea.innerText = originalMsg;
-            }, 2000);
-            if (sessionActive && isAwaitingAnswer) {
-                disableAnswerButtons(false);
-            } else {
-                disableAnswerButtons(wasDisabled);
-            }
-        });
-    }
-    
-    // ---------- РАБОТА С ФАЙЛАМИ ----------
     async function parseVocabularyFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -703,11 +1052,9 @@
             try {
                 const fileWords = await parseVocabularyFile(file);
                 allWords.push(...fileWords);
-            } catch (err) {
-                console.warn(`Ошибка чтения ${file.name}:`, err);
-            }
+            } catch (err) { console.warn(err); }
         }
-        if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Проверьте формат (японское|перевод)");
+        if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Проверь формат (японское|перевод)");
         return allWords;
     }
     
@@ -717,6 +1064,15 @@
             sessionActive = false;
         }
         finalStatsPanel.innerHTML = "";
+        if (welcomePlaceholder.style.display !== "none") {
+            welcomePlaceholder.style.display = "none";
+            if (!document.getElementById("japaneseWord")) {
+                const newWordEl = document.createElement("div");
+                newWordEl.className = "japanese-word";
+                newWordEl.id = "japaneseWord";
+                welcomePlaceholder.parentNode.insertBefore(newWordEl, welcomePlaceholder.nextSibling);
+            }
+        }
         
         wordsData = wordsArray.map((item, idx) => ({
             jp: item.jp,
@@ -733,10 +1089,7 @@
         sessionStartTime = Date.now();
         sessionActive = true;
         
-        messageArea.innerText = `📖 Загружено слов: ${totalWordCount}. Начинаем изучение!`;
-        fileInfoArea.innerHTML = `✅ Активный набор: ${totalWordCount} слов (этап ${stageNum})`;
-        
-        japaneseWordEl.innerText = "⚡準備中⚡";
+        messageArea.innerText = `📖 Загружено слов: ${totalWordCount}. Начинаем изучение этапа ${stageNum}!`;
         candidateRussianEl.innerText = "...";
         timerDisplay.innerText = "10.0";
         
@@ -744,7 +1097,7 @@
         nextQuestion();
     }
     
-    function openFolderPicker(stageNum) {
+    function openFolderPickerForStage(stageNum) {
         const input = document.createElement("input");
         input.type = "file";
         input.webkitdirectory = true;
@@ -755,18 +1108,17 @@
             const files = Array.from(event.target.files);
             if (files.length === 0) return;
             messageArea.innerText = "⏳ Загрузка и разбор файлов...";
-            fileInfoArea.innerHTML = "⏳ Обрабатываются файлы...";
             disableAnswerButtons(true);
             try {
                 const words = await loadWordsFromDirectory(files);
+                stageWordsStore[stageNum] = words;
                 startSessionWithWords(words, stageNum);
             } catch (err) {
-                console.error(err);
                 messageArea.innerText = `❌ Ошибка: ${err.message}`;
-                fileInfoArea.innerHTML = "⚠️ Не удалось загрузить слова. Попробуйте другую папку.";
                 disableAnswerButtons(true);
                 sessionActive = false;
-                japaneseWordEl.innerText = "⚠️ Ошибка";
+                welcomePlaceholder.style.display = "flex";
+                if (document.getElementById("japaneseWord")) document.getElementById("japaneseWord").remove();
                 candidateRussianEl.innerText = "нет данных";
                 totalStageWordsSpan.innerText = "0";
                 remainingWordsSpan.innerText = "0";
@@ -777,13 +1129,51 @@
     }
     
     function setStage(stageNum) {
+        if (sessionActive) {
+            abortCurrentTimersAndSpeech();
+            sessionActive = false;
+        }
         currentStage = stageNum;
         document.querySelectorAll(".stage-btn").forEach(btn => {
             const sVal = parseInt(btn.getAttribute("data-stage"));
             if (sVal === stageNum) btn.classList.add("active");
             else btn.classList.remove("active");
         });
-        openFolderPicker(stageNum);
+        if (stageWordsStore[stageNum]) startSessionWithWords(stageWordsStore[stageNum], stageNum);
+        else openFolderPickerForStage(stageNum);
+    }
+    
+    function takeFullScreenshot() {
+        if (!appContainer) return;
+        const originalMsg = messageArea.innerText;
+        messageArea.innerText = "📸 Создание скриншота всего приложения...";
+        const wasDisabled = yesBtn.disabled;
+        disableAnswerButtons(true);
+        html2canvas(appContainer, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: false
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'japanese_trainer_full_screenshot.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            messageArea.innerText = originalMsg;
+            setTimeout(() => {
+                if (messageArea.innerText === "Скриншот сохранён!") messageArea.innerText = originalMsg;
+            }, 2000);
+            if (sessionActive && isAwaitingAnswer) disableAnswerButtons(false);
+            else disableAnswerButtons(wasDisabled);
+        }).catch(err => {
+            console.error(err);
+            messageArea.innerText = "❌ Не удалось сделать скриншот";
+            setTimeout(() => {
+                if (messageArea.innerText === "❌ Не удалось сделать скриншот") messageArea.innerText = originalMsg;
+            }, 2000);
+            if (sessionActive && isAwaitingAnswer) disableAnswerButtons(false);
+            else disableAnswerButtons(wasDisabled);
+        });
     }
     
     function bindEvents() {
@@ -796,19 +1186,27 @@
         yesBtn.addEventListener("click", () => handleAnswer(true));
         noBtn.addEventListener("click", () => handleAnswer(false));
         screenshotBtn.addEventListener("click", takeFullScreenshot);
+        settingsBtn.onclick = () => { populateModalFields(); settingsModal.style.display = "flex"; };
+        closeSettingsBtn.onclick = () => settingsModal.style.display = "none";
+        saveSettingsBtn.onclick = applyModalChanges;
+        resetSettingsBtn.onclick = resetToDefault;
+        window.onclick = (e) => { if (e.target === settingsModal) settingsModal.style.display = "none"; };
     }
     
     function startApp() {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = () => {};
+        }
+        loadSettings();
         bindEvents();
         sessionActive = false;
         disableAnswerButtons(true);
-        fileInfoArea.innerHTML = "Формат файлов: каждая строка: японское слово|перевод (например: ねこ|кошка)";
         totalStageWordsSpan.innerText = "0";
         remainingWordsSpan.innerText = "0";
         correctCountSpan.innerText = "0";
         wrongCountSpan.innerText = "0";
-        japaneseWordEl.innerText = "📁 выберите папку";
         candidateRussianEl.innerText = "ожидание...";
+        welcomePlaceholder.style.display = "flex";
     }
     
     startApp();
