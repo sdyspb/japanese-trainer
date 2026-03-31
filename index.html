@@ -676,10 +676,10 @@
     let selectedVoiceGender = "female";
     let currentTheme = "light";
     let isAlphabetMode = false;
-    let lastSelectedAlphabet = null; // 'hiragana', 'katakana' или null
+    let lastSelectedAlphabet = null;
     const alphabetBtn = document.getElementById("alphabetBtn");
     
-    // DOM элементы
+    // DOM
     const appContainer = document.getElementById("appContainer");
     const welcomePlaceholder = document.getElementById("welcomePlaceholder");
     const candidateRussianEl = document.getElementById("candidateRussian");
@@ -710,7 +710,6 @@
     const defaultStageNames = ["Этап 1", "Этап 2", "Этап 3", "Этап 4", "Этап 5"];
     let stageNames = [...defaultStageNames];
     
-    // ----- ТЕМА -----
     function applyTheme(theme) {
         document.body.classList.remove("light", "dark");
         document.body.classList.add(theme);
@@ -718,7 +717,6 @@
         localStorage.setItem("japaneseTrainerTheme", theme);
     }
     
-    // ----- НАСТРОЙКИ -----
     function loadSettings() {
         const savedNames = localStorage.getItem("japaneseTrainerStageNames");
         if (savedNames) {
@@ -880,7 +878,7 @@
         });
     }
     
-    // ----- ОСНОВНЫЕ ФУНКЦИИ (общие) -----
+    // ----- ОСНОВНЫЕ ФУНКЦИИ -----
     function updateStatsUI() {
         correctCountSpan.innerText = statsCorrect;
         wrongCountSpan.innerText = statsIncorrect;
@@ -968,7 +966,7 @@
         isAlphabetMode = false;
     }
     
-    // ----- ЛОГИКА ДЛЯ СЛОВ (обычная) -----
+    // ----- ЛОГИКА ДЛЯ СЛОВ (только японское слово произносится) -----
     function getRandomIncorrectRussian(correctRussian, excludeIndex) {
         const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.ru !== correctRussian);
         if (available.length === 0) return correctRussian;
@@ -983,30 +981,24 @@
         return { candidateText: candidate, isMatch: (candidate === word.ru) };
     }
     
-    // ----- ЛОГИКА ДЛЯ АЗБУКИ (исправленная: транскрипция всегда правильная, звук может быть неправильным) -----
-    function getRandomReadingForIncorrectSound(excludeIndex) {
-        const otherIndices = wordsData.filter((_, idx) => idx !== excludeIndex);
-        if (otherIndices.length === 0) return null;
-        const random = otherIndices[Math.floor(Math.random() * otherIndices.length)];
+    // ----- ЛОГИКА ДЛЯ АЗБУКИ (транскрипция произносится и пишется) -----
+    function getRandomTranscriptionForAlphabet(excludeReading) {
+        const other = wordsData.filter(w => w.reading !== excludeReading);
+        if (other.length === 0) return excludeReading;
+        const random = other[Math.floor(Math.random() * other.length)];
         return random.reading;
     }
     
-    // Генерирует вопрос: candidateText – ВСЕГДА правильная транскрипция
-    // isMatch – true, если произносимый звук будет правильным, false – если неправильным
     function generateQuestionForAlphabet(word, wordIndex) {
-        const isCorrectSound = Math.random() < 0.5;
-        let soundToSpeak;
-        if (isCorrectSound) {
-            soundToSpeak = word.reading;
+        const isCorrectVariant = Math.random() < 0.5;
+        let candidateText;
+        if (isCorrectVariant) {
+            candidateText = word.reading;
         } else {
-            soundToSpeak = getRandomReadingForIncorrectSound(wordIndex);
-            if (!soundToSpeak) soundToSpeak = word.reading; // fallback
+            candidateText = getRandomTranscriptionForAlphabet(word.reading);
         }
-        // На экране всегда показываем правильную транскрипцию
-        const candidateText = word.reading;
-        // Правильный ответ – ДА, если произнесённый звук совпадает с транскрипцией
-        const isMatch = (soundToSpeak === word.reading);
-        return { candidateText, isMatch, soundToSpeak };
+        const isMatch = (candidateText === word.reading);
+        return { candidateText, isMatch };
     }
     
     // ----- ОБЩАЯ ФУНКЦИЯ nextQuestion -----
@@ -1037,12 +1029,12 @@
             const res = generateQuestionForAlphabet(word, wordIndex);
             candidateText = res.candidateText;
             isMatch = res.isMatch;
-            soundToSpeak = res.soundToSpeak;
+            soundToSpeak = candidateText; // произносим то, что написано
         } else {
             const res = generateQuestionForWord(word, wordIndex);
             candidateText = res.candidateText;
             isMatch = res.isMatch;
-            soundToSpeak = isMatch ? word.ru : (getRandomIncorrectRussian(word.ru, wordIndex) || word.ru);
+            soundToSpeak = word.jp; // для слов произносим японское слово
         }
         currentCandidateText = candidateText;
         currentIsCorrectMatch = isMatch;
@@ -1061,7 +1053,6 @@
         candidateRussianEl.innerText = currentCandidateText;
         timerDisplay.innerText = "10.0";
         
-        // Озвучиваем выбранный звук (для азбуки – может быть правильным или неправильным)
         try {
             await speakWithSelectedVoice(soundToSpeak);
         } catch (e) { }
@@ -1189,7 +1180,7 @@
         saveSettings();
     }
     
-    // ----- ОБРАБОТЧИКИ КНОПОК ЭТАПОВ -----
+    // ----- ОБРАБОТЧИКИ ЭТАПОВ -----
     function openFolderPickerForStage(stageNum) {
         const input = document.createElement("input");
         input.type = "file";
