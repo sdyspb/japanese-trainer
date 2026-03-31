@@ -2,7 +2,7 @@
 
 Выучить **800 слов** за полгода просто нажимая «да/нет», с озвучкой и таймером
 
-<img width="377" height="631" alt="image" src="https://github.com/user-attachments/assets/9c9bb8b7-6ae2-4272-815b-0d3d38bc09be" />
+<img width="369" height="548" alt="image" src="https://github.com/user-attachments/assets/d46b374c-7da0-4eae-99ed-11069700efa8" />
 
 ## Что делать
 
