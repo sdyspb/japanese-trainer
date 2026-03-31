@@ -747,7 +747,6 @@
             if (themeSelect) themeSelect.value = "light";
         }
         
-        // Загружаем последнюю выбранную азбуку
         const savedAlphabet = localStorage.getItem("japaneseTrainerLastAlphabet");
         if (savedAlphabet === "hiragana") {
             lastSelectedAlphabet = "hiragana";
@@ -984,19 +983,30 @@
         return { candidateText: candidate, isMatch: (candidate === word.ru) };
     }
     
-    // ----- ЛОГИКА ДЛЯ АЗБУКИ -----
-    function getRandomIncorrectReading(correctReading, excludeIndex) {
-        const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.reading !== correctReading);
-        if (available.length === 0) return correctReading;
-        return available[Math.floor(Math.random() * available.length)].reading;
+    // ----- ЛОГИКА ДЛЯ АЗБУКИ (исправленная: транскрипция всегда правильная, звук может быть неправильным) -----
+    function getRandomReadingForIncorrectSound(excludeIndex) {
+        const otherIndices = wordsData.filter((_, idx) => idx !== excludeIndex);
+        if (otherIndices.length === 0) return null;
+        const random = otherIndices[Math.floor(Math.random() * otherIndices.length)];
+        return random.reading;
     }
     
+    // Генерирует вопрос: candidateText – ВСЕГДА правильная транскрипция
+    // isMatch – true, если произносимый звук будет правильным, false – если неправильным
     function generateQuestionForAlphabet(word, wordIndex) {
-        const isCorrectVariant = Math.random() < 0.5;
-        let candidate;
-        if (isCorrectVariant) candidate = word.reading;
-        else candidate = getRandomIncorrectReading(word.reading, wordIndex);
-        return { candidateText: candidate, isMatch: (candidate === word.reading) };
+        const isCorrectSound = Math.random() < 0.5;
+        let soundToSpeak;
+        if (isCorrectSound) {
+            soundToSpeak = word.reading;
+        } else {
+            soundToSpeak = getRandomReadingForIncorrectSound(wordIndex);
+            if (!soundToSpeak) soundToSpeak = word.reading; // fallback
+        }
+        // На экране всегда показываем правильную транскрипцию
+        const candidateText = word.reading;
+        // Правильный ответ – ДА, если произнесённый звук совпадает с транскрипцией
+        const isMatch = (soundToSpeak === word.reading);
+        return { candidateText, isMatch, soundToSpeak };
     }
     
     // ----- ОБЩАЯ ФУНКЦИЯ nextQuestion -----
@@ -1022,15 +1032,17 @@
         const word = wordsData[wordIndex];
         currentWordObj = { ...word, originalIndex: wordIndex };
         
-        let candidateText, isMatch;
+        let candidateText, isMatch, soundToSpeak;
         if (isAlphabetMode) {
             const res = generateQuestionForAlphabet(word, wordIndex);
             candidateText = res.candidateText;
             isMatch = res.isMatch;
+            soundToSpeak = res.soundToSpeak;
         } else {
             const res = generateQuestionForWord(word, wordIndex);
             candidateText = res.candidateText;
             isMatch = res.isMatch;
+            soundToSpeak = isMatch ? word.ru : (getRandomIncorrectRussian(word.ru, wordIndex) || word.ru);
         }
         currentCandidateText = candidateText;
         currentIsCorrectMatch = isMatch;
@@ -1049,12 +1061,9 @@
         candidateRussianEl.innerText = currentCandidateText;
         timerDisplay.innerText = "10.0";
         
-        // Озвучиваем правильное чтение (для азбуки) или правильный перевод (для слов)
-        let correctSound;
-        if (isAlphabetMode) correctSound = word.reading;
-        else correctSound = word.ru;
+        // Озвучиваем выбранный звук (для азбуки – может быть правильным или неправильным)
         try {
-            await speakWithSelectedVoice(correctSound);
+            await speakWithSelectedVoice(soundToSpeak);
         } catch (e) { }
         
         if (!sessionActive) {
@@ -1170,7 +1179,6 @@
         lockNextQuestion = false;
         nextQuestion();
         
-        // Обновляем кнопку и сохраняем выбор
         if (alphabetKey === 'hiragana') {
             lastSelectedAlphabet = 'hiragana';
             alphabetBtn.innerHTML = "📖 ひらがな";
