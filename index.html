@@ -7,6 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <style>
+        /* (стили остаются без изменений) */
         * {
             box-sizing: border-box;
             user-select: none;
@@ -720,7 +721,6 @@
     function loadVoices() {
         const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
         if (!voiceSelect) return;
-        const currentSelection = voiceSelect.value;
         voiceSelect.innerHTML = '';
         if (voices.length === 0) {
             const option = document.createElement('option');
@@ -909,36 +909,48 @@
         populateModalFields();
     }
     
-    // ----- ПАРСИНГ ФАЙЛОВ (универсальный) -----
+    // ----- ПАРСИНГ ФАЙЛОВ (улучшенный алгоритм) -----
     function parseLinesToWords(lines) {
         const words = [];
         for (let line of lines) {
             line = line.trim();
             if (line === "") continue;
-            let jpPart = "", ruPart = "";
-            // Определяем разделитель
-            if (line.includes("|")) {
-                const parts = line.split("|");
-                jpPart = parts[0].trim();
-                ruPart = parts.slice(1).join("|").trim();
-            } else if (line.includes("\t")) {
-                const parts = line.split("\t");
-                jpPart = parts[0].trim();
-                ruPart = parts.slice(1).join("\t").trim();
+            
+            // Определяем позицию разделителя: ищем первый символ '|', '\t' или два и более пробелов подряд
+            let splitPos = -1;
+            // Ищем |
+            const pipeIdx = line.indexOf('|');
+            // Ищем табуляцию
+            const tabIdx = line.indexOf('\t');
+            // Ищем два и более пробелов
+            const doubleSpaceMatch = line.match(/\s{2,}/);
+            const spaceIdx = doubleSpaceMatch ? doubleSpaceMatch.index : -1;
+            
+            // Берём самый левый из найденных разделителей
+            let candidates = [];
+            if (pipeIdx !== -1) candidates.push(pipeIdx);
+            if (tabIdx !== -1) candidates.push(tabIdx);
+            if (spaceIdx !== -1) candidates.push(spaceIdx);
+            if (candidates.length) splitPos = Math.min(...candidates);
+            
+            let jpPart, ruPart;
+            if (splitPos === -1) {
+                // Нет разделителя – считаем, что вся строка — это одно японское слово, перевод пустой (пропускаем)
+                continue;
             } else {
-                // Ищем первый пробел, не являющийся началом строки, и считаем его разделителем
-                const firstSpace = line.indexOf(" ");
-                if (firstSpace !== -1) {
-                    jpPart = line.substring(0, firstSpace).trim();
-                    ruPart = line.substring(firstSpace + 1).trim();
-                } else {
-                    // Нет разделителя – пропускаем
-                    continue;
+                jpPart = line.substring(0, splitPos).trim();
+                ruPart = line.substring(splitPos).trim();
+                // Удаляем символ разделителя из начала правой части
+                if (ruPart.length > 0 && (ruPart[0] === '|' || ruPart[0] === '\t' || ruPart[0] === ' ')) {
+                    ruPart = ruPart.substring(1).trim();
                 }
             }
+            
             if (!jpPart || !ruPart) continue;
-            // Разбиваем левую часть по пробелам на несколько японских слов
+            
+            // Разбиваем японскую часть на отдельные слова по пробелам (один и более)
             const jpWords = jpPart.split(/\s+/).filter(w => w);
+            // Перевод может содержать несколько слов, оставляем как есть
             for (const jp of jpWords) {
                 words.push({ jp, ru: ruPart });
             }
@@ -949,7 +961,6 @@
     async function parseVocabularyFile(file) {
         const ext = file.name.split('.').pop().toLowerCase();
         if (ext === 'docx') {
-            // Используем mammoth для извлечения текста
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = async (e) => {
@@ -968,7 +979,6 @@
                 reader.readAsArrayBuffer(file);
             });
         } else {
-            // Обычный текстовый файл
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -1306,7 +1316,7 @@
                         allWords.push(...words);
                     }
                 }
-                if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Поддерживаются .txt и .docx с разделителями |, табуляция, пробелы");
+                if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Поддерживаются .txt и .docx с разделителями |, табуляция, два и более пробелов");
                 stageWordsStore[stageNum] = allWords;
                 startSessionWithWords(allWords, stageNum);
             } catch (err) {
