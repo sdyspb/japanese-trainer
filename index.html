@@ -582,10 +582,7 @@
         </div>
         <div class="modal-field">
             <label>Голос для озвучивания</label>
-            <select id="voiceSelect">
-                <option value="female">🌸 Женский (нежный)</option>
-                <option value="male">⚔️ Мужской (самурайский)</option>
-            </select>
+            <select id="voiceSelect"></select>
         </div>
         <div class="modal-field">
             <label>Тема оформления</label>
@@ -673,11 +670,12 @@
     let isAwaitingAnswer = false;
     let lockNextQuestion = false;
     
-    let selectedVoiceGender = "female";
     let currentTheme = "light";
     let isAlphabetMode = false;
     let lastSelectedAlphabet = null;
     const alphabetBtn = document.getElementById("alphabetBtn");
+    const voiceSelect = document.getElementById("voiceSelect");
+    let selectedVoiceName = null; // имя выбранного голоса
     
     // DOM
     const appContainer = document.getElementById("appContainer");
@@ -697,7 +695,6 @@
     const settingsBtn = document.getElementById("settingsBtn");
     const settingsModal = document.getElementById("settingsModal");
     const stageNamesFields = document.getElementById("stageNamesFields");
-    const voiceSelect = document.getElementById("voiceSelect");
     const themeSelect = document.getElementById("themeSelect");
     const saveSettingsBtn = document.getElementById("saveSettingsBtn");
     const resetSettingsBtn = document.getElementById("resetSettingsBtn");
@@ -710,6 +707,7 @@
     const defaultStageNames = ["Этап 1", "Этап 2", "Этап 3", "Этап 4", "Этап 5"];
     let stageNames = [...defaultStageNames];
     
+    // ----- ТЕМА -----
     function applyTheme(theme) {
         document.body.classList.remove("light", "dark");
         document.body.classList.add(theme);
@@ -717,6 +715,75 @@
         localStorage.setItem("japaneseTrainerTheme", theme);
     }
     
+    // ----- ГОЛОСА -----
+    function loadVoices() {
+        const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+        if (!voiceSelect) return;
+        const currentSelection = voiceSelect.value;
+        voiceSelect.innerHTML = '';
+        if (voices.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = 'Нет японских голосов';
+            option.disabled = true;
+            voiceSelect.appendChild(option);
+            return;
+        }
+        voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.name;
+            option.textContent = `${voice.name} (${voice.lang})`;
+            voiceSelect.appendChild(option);
+        });
+        // Восстанавливаем сохранённый выбор
+        if (selectedVoiceName && voices.some(v => v.name === selectedVoiceName)) {
+            voiceSelect.value = selectedVoiceName;
+        } else {
+            voiceSelect.value = voices[0].name;
+            selectedVoiceName = voices[0].name;
+        }
+    }
+    
+    function getSelectedVoice() {
+        const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+        const selectedName = voiceSelect.value;
+        return voices.find(v => v.name === selectedName) || voices[0] || null;
+    }
+    
+    async function speakWithSelectedVoice(text) {
+        if (!window.speechSynthesis) return;
+        return new Promise((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "ja-JP";
+            utterance.rate = 0.9;
+            const voice = getSelectedVoice();
+            if (voice) utterance.voice = voice;
+            let resolved = false;
+            const timer = setTimeout(() => {
+                if (!resolved) {
+                    resolved = true;
+                    window.speechSynthesis.cancel();
+                    resolve();
+                }
+            }, 2000);
+            utterance.onend = () => {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+            };
+            utterance.onerror = () => {
+                if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve();
+                }
+            };
+            window.speechSynthesis.speak(utterance);
+        });
+    }
+    
+    // ----- НАСТРОЙКИ -----
     function loadSettings() {
         const savedNames = localStorage.getItem("japaneseTrainerStageNames");
         if (savedNames) {
@@ -727,14 +794,8 @@
         }
         updateStageButtons();
         
-        const savedVoice = localStorage.getItem("japaneseTrainerVoice");
-        if (savedVoice === "male" || savedVoice === "female") {
-            selectedVoiceGender = savedVoice;
-            if (voiceSelect) voiceSelect.value = savedVoice;
-        } else {
-            selectedVoiceGender = "female";
-            if (voiceSelect) voiceSelect.value = "female";
-        }
+        const savedVoice = localStorage.getItem("japaneseTrainerVoiceName");
+        if (savedVoice) selectedVoiceName = savedVoice;
         
         const savedTheme = localStorage.getItem("japaneseTrainerTheme");
         if (savedTheme === "light" || savedTheme === "dark") {
@@ -756,11 +817,36 @@
             lastSelectedAlphabet = null;
             alphabetBtn.innerHTML = "📖 Алфавит";
         }
+        
+        // Загружаем голоса после инициализации (могут быть ещё не готовы)
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                loadVoices();
+                // после загрузки восстанавливаем выбранный голос
+                if (selectedVoiceName && voiceSelect) {
+                    const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+                    if (voices.some(v => v.name === selectedVoiceName)) {
+                        voiceSelect.value = selectedVoiceName;
+                    } else if (voices.length) {
+                        voiceSelect.value = voices[0].name;
+                        selectedVoiceName = voices[0].name;
+                    }
+                }
+            };
+            // Немедленный вызов, если голоса уже загружены
+            if (speechSynthesis.getVoices().length) loadVoices();
+            else speechSynthesis.onvoiceschanged();
+        } else {
+            loadVoices();
+        }
     }
     
     function saveSettings() {
         localStorage.setItem("japaneseTrainerStageNames", JSON.stringify(stageNames));
-        localStorage.setItem("japaneseTrainerVoice", selectedVoiceGender);
+        if (voiceSelect && voiceSelect.value) {
+            localStorage.setItem("japaneseTrainerVoiceName", voiceSelect.value);
+            selectedVoiceName = voiceSelect.value;
+        }
         if (lastSelectedAlphabet) {
             localStorage.setItem("japaneseTrainerLastAlphabet", lastSelectedAlphabet);
         } else {
@@ -793,8 +879,8 @@
             div.appendChild(input);
             stageNamesFields.appendChild(div);
         }
-        voiceSelect.value = selectedVoiceGender;
-        themeSelect.value = currentTheme;
+        if (themeSelect) themeSelect.value = currentTheme;
+        // голоса уже заполнены в loadVoices
     }
     
     function applyModalChanges() {
@@ -806,7 +892,6 @@
             newNames.push(val);
         });
         stageNames = newNames;
-        selectedVoiceGender = voiceSelect.value;
         const newTheme = themeSelect.value;
         if (newTheme !== currentTheme) applyTheme(newTheme);
         saveSettings();
@@ -815,70 +900,21 @@
     
     function resetToDefault() {
         stageNames = [...defaultStageNames];
-        selectedVoiceGender = "female";
         applyTheme("light");
         lastSelectedAlphabet = null;
         alphabetBtn.innerHTML = "📖 Алфавит";
+        // сброс голоса на первый доступный
+        const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+        if (voices.length && voiceSelect) {
+            voiceSelect.value = voices[0].name;
+            selectedVoiceName = voices[0].name;
+        }
         saveSettings();
         updateStageButtons();
         populateModalFields();
     }
     
-    // ----- ГОЛОС -----
-    function getVoiceForGender(gender) {
-        if (!window.speechSynthesis) return null;
-        const voices = window.speechSynthesis.getVoices();
-        if (!voices.length) return null;
-        const japaneseVoices = voices.filter(v => v.lang.startsWith("ja"));
-        if (gender === "male") {
-            let maleVoice = japaneseVoices.find(v => v.name.includes("Male") || v.name.includes("Taro") || v.name.includes("Otoya") || v.name.toLowerCase().includes("man"));
-            if (!maleVoice) maleVoice = japaneseVoices.find(v => !v.name.includes("Female") && !v.name.includes("Kyoko") && !v.name.includes("Samantha"));
-            if (maleVoice) return maleVoice;
-            if (japaneseVoices.length) return japaneseVoices[0];
-            return voices[0];
-        } else {
-            let femaleVoice = japaneseVoices.find(v => v.name.includes("Female") || v.name.includes("Kyoko") || v.name.includes("Samantha") || v.name.includes("Yuna"));
-            if (femaleVoice) return femaleVoice;
-            if (japaneseVoices.length) return japaneseVoices[0];
-            return voices[0];
-        }
-    }
-    
-    async function speakWithSelectedVoice(text) {
-        if (!window.speechSynthesis) return;
-        return new Promise((resolve) => {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = "ja-JP";
-            utterance.rate = 0.9;
-            const voice = getVoiceForGender(selectedVoiceGender);
-            if (voice) utterance.voice = voice;
-            let resolved = false;
-            const timer = setTimeout(() => {
-                if (!resolved) {
-                    resolved = true;
-                    window.speechSynthesis.cancel();
-                    resolve();
-                }
-            }, 2000);
-            utterance.onend = () => {
-                if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timer);
-                    resolve();
-                }
-            };
-            utterance.onerror = () => {
-                if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timer);
-                    resolve();
-                }
-            };
-            window.speechSynthesis.speak(utterance);
-        });
-    }
-    
-    // ----- ОСНОВНЫЕ ФУНКЦИИ -----
+    // ----- ОСНОВНЫЕ ФУНКЦИИ (общие) -----
     function updateStatsUI() {
         correctCountSpan.innerText = statsCorrect;
         wrongCountSpan.innerText = statsIncorrect;
@@ -966,7 +1002,7 @@
         isAlphabetMode = false;
     }
     
-    // ----- ЛОГИКА ДЛЯ СЛОВ (только японское слово произносится) -----
+    // ----- ЛОГИКА ДЛЯ СЛОВ -----
     function getRandomIncorrectRussian(correctRussian, excludeIndex) {
         const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.ru !== correctRussian);
         if (available.length === 0) return correctRussian;
@@ -981,7 +1017,7 @@
         return { candidateText: candidate, isMatch: (candidate === word.ru) };
     }
     
-    // ----- ЛОГИКА ДЛЯ АЗБУКИ (транскрипция произносится и пишется) -----
+    // ----- ЛОГИКА ДЛЯ АЗБУКИ -----
     function getRandomTranscriptionForAlphabet(excludeReading) {
         const other = wordsData.filter(w => w.reading !== excludeReading);
         if (other.length === 0) return excludeReading;
@@ -1029,12 +1065,12 @@
             const res = generateQuestionForAlphabet(word, wordIndex);
             candidateText = res.candidateText;
             isMatch = res.isMatch;
-            soundToSpeak = candidateText; // произносим то, что написано
+            soundToSpeak = candidateText;
         } else {
             const res = generateQuestionForWord(word, wordIndex);
             candidateText = res.candidateText;
             isMatch = res.isMatch;
-            soundToSpeak = word.jp; // для слов произносим японское слово
+            soundToSpeak = word.jp;
         }
         currentCandidateText = candidateText;
         currentIsCorrectMatch = isMatch;
@@ -1385,9 +1421,6 @@
     }
     
     function startApp() {
-        if (window.speechSynthesis) {
-            window.speechSynthesis.onvoiceschanged = () => {};
-        }
         loadSettings();
         bindEvents();
         sessionActive = false;
