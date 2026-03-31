@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Японский тренажёр: слова + азбука</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -675,7 +676,7 @@
     let lastSelectedAlphabet = null;
     const alphabetBtn = document.getElementById("alphabetBtn");
     const voiceSelect = document.getElementById("voiceSelect");
-    let selectedVoiceName = null; // имя выбранного голоса
+    let selectedVoiceName = null;
     
     // DOM
     const appContainer = document.getElementById("appContainer");
@@ -734,7 +735,6 @@
             option.textContent = `${voice.name} (${voice.lang})`;
             voiceSelect.appendChild(option);
         });
-        // Восстанавливаем сохранённый выбор
         if (selectedVoiceName && voices.some(v => v.name === selectedVoiceName)) {
             voiceSelect.value = selectedVoiceName;
         } else {
@@ -818,11 +818,9 @@
             alphabetBtn.innerHTML = "📖 Алфавит";
         }
         
-        // Загружаем голоса после инициализации (могут быть ещё не готовы)
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = () => {
                 loadVoices();
-                // после загрузки восстанавливаем выбранный голос
                 if (selectedVoiceName && voiceSelect) {
                     const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
                     if (voices.some(v => v.name === selectedVoiceName)) {
@@ -833,7 +831,6 @@
                     }
                 }
             };
-            // Немедленный вызов, если голоса уже загружены
             if (speechSynthesis.getVoices().length) loadVoices();
             else speechSynthesis.onvoiceschanged();
         } else {
@@ -880,7 +877,6 @@
             stageNamesFields.appendChild(div);
         }
         if (themeSelect) themeSelect.value = currentTheme;
-        // голоса уже заполнены в loadVoices
     }
     
     function applyModalChanges() {
@@ -903,7 +899,6 @@
         applyTheme("light");
         lastSelectedAlphabet = null;
         alphabetBtn.innerHTML = "📖 Алфавит";
-        // сброс голоса на первый доступный
         const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
         if (voices.length && voiceSelect) {
             voiceSelect.value = voices[0].name;
@@ -914,7 +909,81 @@
         populateModalFields();
     }
     
-    // ----- ОСНОВНЫЕ ФУНКЦИИ (общие) -----
+    // ----- ПАРСИНГ ФАЙЛОВ (универсальный) -----
+    function parseLinesToWords(lines) {
+        const words = [];
+        for (let line of lines) {
+            line = line.trim();
+            if (line === "") continue;
+            let jpPart = "", ruPart = "";
+            // Определяем разделитель
+            if (line.includes("|")) {
+                const parts = line.split("|");
+                jpPart = parts[0].trim();
+                ruPart = parts.slice(1).join("|").trim();
+            } else if (line.includes("\t")) {
+                const parts = line.split("\t");
+                jpPart = parts[0].trim();
+                ruPart = parts.slice(1).join("\t").trim();
+            } else {
+                // Ищем первый пробел, не являющийся началом строки, и считаем его разделителем
+                const firstSpace = line.indexOf(" ");
+                if (firstSpace !== -1) {
+                    jpPart = line.substring(0, firstSpace).trim();
+                    ruPart = line.substring(firstSpace + 1).trim();
+                } else {
+                    // Нет разделителя – пропускаем
+                    continue;
+                }
+            }
+            if (!jpPart || !ruPart) continue;
+            // Разбиваем левую часть по пробелам на несколько японских слов
+            const jpWords = jpPart.split(/\s+/).filter(w => w);
+            for (const jp of jpWords) {
+                words.push({ jp, ru: ruPart });
+            }
+        }
+        return words;
+    }
+    
+    async function parseVocabularyFile(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'docx') {
+            // Используем mammoth для извлечения текста
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const arrayBuffer = e.target.result;
+                        const result = await mammoth.extractRawText({ arrayBuffer });
+                        const text = result.value;
+                        const lines = text.split(/\r?\n/);
+                        const words = parseLinesToWords(lines);
+                        resolve(words);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsArrayBuffer(file);
+            });
+        } else {
+            // Обычный текстовый файл
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    const lines = content.split(/\r?\n/);
+                    const words = parseLinesToWords(lines);
+                    resolve(words);
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsText(file, "UTF-8");
+            });
+        }
+    }
+    
+    // ----- ОСТАЛЬНОЙ КОД (без изменений) -----
     function updateStatsUI() {
         correctCountSpan.innerText = statsCorrect;
         wrongCountSpan.innerText = statsIncorrect;
@@ -1230,9 +1299,16 @@
             messageArea.innerText = "⏳ Загрузка и разбор файлов...";
             disableAnswerButtons(true);
             try {
-                const words = await loadWordsFromDirectory(files);
-                stageWordsStore[stageNum] = words;
-                startSessionWithWords(words, stageNum);
+                let allWords = [];
+                for (const file of files) {
+                    if (file.name.toLowerCase().endsWith('.txt') || file.name.toLowerCase().endsWith('.docx')) {
+                        const words = await parseVocabularyFile(file);
+                        allWords.push(...words);
+                    }
+                }
+                if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Поддерживаются .txt и .docx с разделителями |, табуляция, пробелы");
+                stageWordsStore[stageNum] = allWords;
+                startSessionWithWords(allWords, stageNum);
             } catch (err) {
                 messageArea.innerText = `❌ Ошибка: ${err.message}`;
                 disableAnswerButtons(true);
@@ -1306,50 +1382,6 @@
         });
         if (stageWordsStore[stageNum]) startSessionWithWords(stageWordsStore[stageNum], stageNum);
         else openFolderPickerForStage(stageNum);
-    }
-    
-    // ----- ЗАГРУЗКА СЛОВ ИЗ ПАПКИ -----
-    async function parseVocabularyFile(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target.result;
-                const lines = content.split(/\r?\n/);
-                const words = [];
-                for (let line of lines) {
-                    line = line.trim();
-                    if (line === "") continue;
-                    let separator = "|";
-                    if (line.includes("|")) separator = "|";
-                    else if (line.includes("\t")) separator = "\t";
-                    else if (line.includes(";")) separator = ";";
-                    else continue;
-                    const parts = line.split(separator);
-                    if (parts.length >= 2) {
-                        const jp = parts[0].trim();
-                        const ru = parts[1].trim();
-                        if (jp && ru) words.push({ jp, ru });
-                    }
-                }
-                resolve(words);
-            };
-            reader.onerror = () => reject(reader.error);
-            reader.readAsText(file, "UTF-8");
-        });
-    }
-    
-    async function loadWordsFromDirectory(files) {
-        const txtFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith(".txt"));
-        if (txtFiles.length === 0) throw new Error("В выбранной папке нет .txt файлов");
-        let allWords = [];
-        for (const file of txtFiles) {
-            try {
-                const fileWords = await parseVocabularyFile(file);
-                allWords.push(...fileWords);
-            } catch (err) { console.warn(err); }
-        }
-        if (allWords.length === 0) throw new Error("Не удалось извлечь слова. Проверь формат (японское|перевод)");
-        return allWords;
     }
     
     // ----- СКРИНШОТ -----
