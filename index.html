@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Японский тренажёр</title>
+    <title>Японский тренажёр: слова + азбука</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
@@ -526,6 +526,7 @@
         <button data-stage="3" class="stage-btn">Этап 3</button>
         <button data-stage="4" class="stage-btn">Этап 4</button>
         <button data-stage="5" class="stage-btn">Этап 5</button>
+        <button data-stage="alphabet" class="stage-btn" id="alphabetBtn">📖 Алфавит</button>
     </div>
 
     <div class="quiz-panel" id="screenshotArea">
@@ -546,8 +547,8 @@
         <div class="stats-row">
             <span>📊 верно: <strong id="correctCount">0</strong></span>
             <span>❌ ошибок: <strong id="wrongCount">0</strong></span>
-            <span>📚 осталось слов: <strong id="remainingWords">0</strong></span>
-            <span>🔄 всего слов: <strong id="totalStageWords">0</strong></span>
+            <span>📚 осталось символов/слов: <strong id="remainingWords">0</strong></span>
+            <span>🔄 всего: <strong id="totalStageWords">0</strong></span>
         </div>
 
         <div class="message-area" id="messageArea">
@@ -601,7 +602,58 @@
     </div>
 </div>
 
+<div id="alphabetModal" class="modal">
+    <div class="modal-content">
+        <h3>📖 Выбери азбуку</h3>
+        <div class="modal-buttons" style="flex-direction: column; gap: 12px;">
+            <button id="chooseHiraganaBtn" style="background: #5d7a9c;">ひらがな (Хирагана)</button>
+            <button id="chooseKatakanaBtn" style="background: #8b6b4f;">カタカナ (Катакана)</button>
+            <button id="cancelAlphabetBtn" class="reset-btn">Отмена</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ---------------------- ВСТРОЕННЫЕ АЗБУКИ --------------------------
+    const HIRAGANA = [
+        { char: "あ", reading: "a" }, { char: "い", reading: "i" }, { char: "う", reading: "u" },
+        { char: "え", reading: "e" }, { char: "お", reading: "o" }, { char: "か", reading: "ka" },
+        { char: "き", reading: "ki" }, { char: "く", reading: "ku" }, { char: "け", reading: "ke" },
+        { char: "こ", reading: "ko" }, { char: "さ", reading: "sa" }, { char: "し", reading: "shi" },
+        { char: "す", reading: "su" }, { char: "せ", reading: "se" }, { char: "そ", reading: "so" },
+        { char: "た", reading: "ta" }, { char: "ち", reading: "chi" }, { char: "つ", reading: "tsu" },
+        { char: "て", reading: "te" }, { char: "と", reading: "to" }, { char: "な", reading: "na" },
+        { char: "に", reading: "ni" }, { char: "ぬ", reading: "nu" }, { char: "ね", reading: "ne" },
+        { char: "の", reading: "no" }, { char: "は", reading: "ha" }, { char: "ひ", reading: "hi" },
+        { char: "ふ", reading: "fu" }, { char: "へ", reading: "he" }, { char: "ほ", reading: "ho" },
+        { char: "ま", reading: "ma" }, { char: "み", reading: "mi" }, { char: "む", reading: "mu" },
+        { char: "め", reading: "me" }, { char: "も", reading: "mo" }, { char: "や", reading: "ya" },
+        { char: "ゆ", reading: "yu" }, { char: "よ", reading: "yo" }, { char: "ら", reading: "ra" },
+        { char: "り", reading: "ri" }, { char: "る", reading: "ru" }, { char: "れ", reading: "re" },
+        { char: "ろ", reading: "ro" }, { char: "わ", reading: "wa" }, { char: "を", reading: "wo" },
+        { char: "ん", reading: "n" }
+    ];
+
+    const KATAKANA = [
+        { char: "ア", reading: "a" }, { char: "イ", reading: "i" }, { char: "ウ", reading: "u" },
+        { char: "エ", reading: "e" }, { char: "オ", reading: "o" }, { char: "カ", reading: "ka" },
+        { char: "キ", reading: "ki" }, { char: "ク", reading: "ku" }, { char: "ケ", reading: "ke" },
+        { char: "コ", reading: "ko" }, { char: "サ", reading: "sa" }, { char: "シ", reading: "shi" },
+        { char: "ス", reading: "su" }, { char: "セ", reading: "se" }, { char: "ソ", reading: "so" },
+        { char: "タ", reading: "ta" }, { char: "チ", reading: "chi" }, { char: "ツ", reading: "tsu" },
+        { char: "テ", reading: "te" }, { char: "ト", reading: "to" }, { char: "ナ", reading: "na" },
+        { char: "ニ", reading: "ni" }, { char: "ヌ", reading: "nu" }, { char: "ネ", reading: "ne" },
+        { char: "ノ", reading: "no" }, { char: "ハ", reading: "ha" }, { char: "ヒ", reading: "hi" },
+        { char: "フ", reading: "fu" }, { char: "ヘ", reading: "he" }, { char: "ホ", reading: "ho" },
+        { char: "マ", reading: "ma" }, { char: "ミ", reading: "mi" }, { char: "ム", reading: "mu" },
+        { char: "メ", reading: "me" }, { char: "モ", reading: "mo" }, { char: "ヤ", reading: "ya" },
+        { char: "ユ", reading: "yu" }, { char: "ヨ", reading: "yo" }, { char: "ラ", reading: "ra" },
+        { char: "リ", reading: "ri" }, { char: "ル", reading: "ru" }, { char: "レ", reading: "re" },
+        { char: "ロ", reading: "ro" }, { char: "ワ", reading: "wa" }, { char: "ヲ", reading: "wo" },
+        { char: "ン", reading: "n" }
+    ];
+
+    // ---------------------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ --------------------------
     const stageWordsStore = {};
     let currentStage = 1;
     let wordsData = [];
@@ -623,7 +675,11 @@
     
     let selectedVoiceGender = "female";
     let currentTheme = "light";
+    let isAlphabetMode = false;
+    let lastSelectedAlphabet = null; // 'hiragana', 'katakana' или null
+    const alphabetBtn = document.getElementById("alphabetBtn");
     
+    // DOM элементы
     const appContainer = document.getElementById("appContainer");
     const welcomePlaceholder = document.getElementById("welcomePlaceholder");
     const candidateRussianEl = document.getElementById("candidateRussian");
@@ -646,10 +702,15 @@
     const saveSettingsBtn = document.getElementById("saveSettingsBtn");
     const resetSettingsBtn = document.getElementById("resetSettingsBtn");
     const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+    const alphabetModal = document.getElementById("alphabetModal");
+    const chooseHiraganaBtn = document.getElementById("chooseHiraganaBtn");
+    const chooseKatakanaBtn = document.getElementById("chooseKatakanaBtn");
+    const cancelAlphabetBtn = document.getElementById("cancelAlphabetBtn");
     
     const defaultStageNames = ["Этап 1", "Этап 2", "Этап 3", "Этап 4", "Этап 5"];
     let stageNames = [...defaultStageNames];
     
+    // ----- ТЕМА -----
     function applyTheme(theme) {
         document.body.classList.remove("light", "dark");
         document.body.classList.add(theme);
@@ -657,6 +718,7 @@
         localStorage.setItem("japaneseTrainerTheme", theme);
     }
     
+    // ----- НАСТРОЙКИ -----
     function loadSettings() {
         const savedNames = localStorage.getItem("japaneseTrainerStageNames");
         if (savedNames) {
@@ -684,18 +746,37 @@
             applyTheme("light");
             if (themeSelect) themeSelect.value = "light";
         }
+        
+        // Загружаем последнюю выбранную азбуку
+        const savedAlphabet = localStorage.getItem("japaneseTrainerLastAlphabet");
+        if (savedAlphabet === "hiragana") {
+            lastSelectedAlphabet = "hiragana";
+            alphabetBtn.innerHTML = "📖 ひらがな";
+        } else if (savedAlphabet === "katakana") {
+            lastSelectedAlphabet = "katakana";
+            alphabetBtn.innerHTML = "📖 カタカナ";
+        } else {
+            lastSelectedAlphabet = null;
+            alphabetBtn.innerHTML = "📖 Алфавит";
+        }
     }
     
     function saveSettings() {
         localStorage.setItem("japaneseTrainerStageNames", JSON.stringify(stageNames));
         localStorage.setItem("japaneseTrainerVoice", selectedVoiceGender);
+        if (lastSelectedAlphabet) {
+            localStorage.setItem("japaneseTrainerLastAlphabet", lastSelectedAlphabet);
+        } else {
+            localStorage.removeItem("japaneseTrainerLastAlphabet");
+        }
         updateStageButtons();
     }
     
     function updateStageButtons() {
         const btns = stageSelector.querySelectorAll(".stage-btn");
         for (let i = 0; i < btns.length && i < stageNames.length; i++) {
-            btns[i].textContent = stageNames[i];
+            if (btns[i].getAttribute("data-stage") !== "alphabet")
+                btns[i].textContent = stageNames[i];
         }
     }
     
@@ -739,11 +820,14 @@
         stageNames = [...defaultStageNames];
         selectedVoiceGender = "female";
         applyTheme("light");
+        lastSelectedAlphabet = null;
+        alphabetBtn.innerHTML = "📖 Алфавит";
         saveSettings();
         updateStageButtons();
         populateModalFields();
     }
     
+    // ----- ГОЛОС -----
     function getVoiceForGender(gender) {
         if (!window.speechSynthesis) return null;
         const voices = window.speechSynthesis.getVoices();
@@ -797,25 +881,12 @@
         });
     }
     
+    // ----- ОСНОВНЫЕ ФУНКЦИИ (общие) -----
     function updateStatsUI() {
         correctCountSpan.innerText = statsCorrect;
         wrongCountSpan.innerText = statsIncorrect;
         remainingWordsSpan.innerText = unmasteredIndices.length;
         totalStageWordsSpan.innerText = totalWordCount;
-    }
-    
-    function getRandomIncorrectRussian(correctRussian, excludeIndex) {
-        const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.ru !== correctRussian);
-        if (available.length === 0) return correctRussian;
-        return available[Math.floor(Math.random() * available.length)].ru;
-    }
-    
-    function generateQuestionForWord(word, wordIndex) {
-        const isCorrectVariant = Math.random() < 0.5;
-        let candidate;
-        if (isCorrectVariant) candidate = word.ru;
-        else candidate = getRandomIncorrectRussian(word.ru, wordIndex);
-        return { candidateText: candidate, isMatch: (candidate === word.ru) };
     }
     
     function abortCurrentTimersAndSpeech() {
@@ -847,6 +918,7 @@
         statsIncorrect = 0;
         totalWordCount = 0;
         updateStatsUI();
+        isAlphabetMode = false;
     }
     
     function finishSession() {
@@ -868,7 +940,6 @@
         }
         const gradeText = grade === 5 ? "秀" : grade === 4 ? "優" : grade === 3 ? "良" : grade === 2 ? "可" : "不可";
         
-        // Фразы для озвучивания
         let phrase = "";
         if (grade === 5) phrase = "素晴らしい、ご";
         else if (grade === 4) phrase = "良い、よん";
@@ -876,7 +947,6 @@
         else if (grade === 2) phrase = "頑張って、に";
         else phrase = "残念、いち";
         
-        // Озвучиваем фразу после отображения
         setTimeout(() => {
             speakWithSelectedVoice(phrase);
         }, 200);
@@ -887,7 +957,7 @@
                 ⏱️ Общее время: ${totalTimeSec} сек<br>
                 ✅ Правильных ответов: ${statsCorrect}<br>
                 ❌ Неправильных ответов: ${statsIncorrect}<br>
-                📖 Всего слов в наборе: ${totalWordCount}<br>
+                📖 Всего символов/слов: ${totalWordCount}<br>
                 🔁 Всего попыток: ${totalAttempts}
             </div>
         `;
@@ -896,8 +966,40 @@
         if (document.getElementById("japaneseWord")) document.getElementById("japaneseWord").remove();
         candidateRussianEl.innerText = gradeText;
         timerDisplay.innerText = "0.0";
+        isAlphabetMode = false;
     }
     
+    // ----- ЛОГИКА ДЛЯ СЛОВ (обычная) -----
+    function getRandomIncorrectRussian(correctRussian, excludeIndex) {
+        const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.ru !== correctRussian);
+        if (available.length === 0) return correctRussian;
+        return available[Math.floor(Math.random() * available.length)].ru;
+    }
+    
+    function generateQuestionForWord(word, wordIndex) {
+        const isCorrectVariant = Math.random() < 0.5;
+        let candidate;
+        if (isCorrectVariant) candidate = word.ru;
+        else candidate = getRandomIncorrectRussian(word.ru, wordIndex);
+        return { candidateText: candidate, isMatch: (candidate === word.ru) };
+    }
+    
+    // ----- ЛОГИКА ДЛЯ АЗБУКИ -----
+    function getRandomIncorrectReading(correctReading, excludeIndex) {
+        const available = wordsData.filter((w, idx) => idx !== excludeIndex && w.reading !== correctReading);
+        if (available.length === 0) return correctReading;
+        return available[Math.floor(Math.random() * available.length)].reading;
+    }
+    
+    function generateQuestionForAlphabet(word, wordIndex) {
+        const isCorrectVariant = Math.random() < 0.5;
+        let candidate;
+        if (isCorrectVariant) candidate = word.reading;
+        else candidate = getRandomIncorrectReading(word.reading, wordIndex);
+        return { candidateText: candidate, isMatch: (candidate === word.reading) };
+    }
+    
+    // ----- ОБЩАЯ ФУНКЦИЯ nextQuestion -----
     async function nextQuestion() {
         if (lockNextQuestion) return;
         lockNextQuestion = true;
@@ -920,7 +1022,16 @@
         const word = wordsData[wordIndex];
         currentWordObj = { ...word, originalIndex: wordIndex };
         
-        const { candidateText, isMatch } = generateQuestionForWord(word, wordIndex);
+        let candidateText, isMatch;
+        if (isAlphabetMode) {
+            const res = generateQuestionForAlphabet(word, wordIndex);
+            candidateText = res.candidateText;
+            isMatch = res.isMatch;
+        } else {
+            const res = generateQuestionForWord(word, wordIndex);
+            candidateText = res.candidateText;
+            isMatch = res.isMatch;
+        }
         currentCandidateText = candidateText;
         currentIsCorrectMatch = isMatch;
         
@@ -938,8 +1049,12 @@
         candidateRussianEl.innerText = currentCandidateText;
         timerDisplay.innerText = "10.0";
         
+        // Озвучиваем правильное чтение (для азбуки) или правильный перевод (для слов)
+        let correctSound;
+        if (isAlphabetMode) correctSound = word.reading;
+        else correctSound = word.ru;
         try {
-            await speakWithSelectedVoice(word.jp);
+            await speakWithSelectedVoice(correctSound);
         } catch (e) { }
         
         if (!sessionActive) {
@@ -1004,10 +1119,10 @@
             const pos = unmasteredIndices.indexOf(currentIdx);
             if (pos !== -1) unmasteredIndices.splice(pos, 1);
             wordsData[currentIdx].mastered = true;
-            messageArea.innerText = "✅ Верно! Слово засчитано.";
+            messageArea.innerText = "✅ Верно! Символ/слово засчитано.";
         } else {
             statsIncorrect++;
-            messageArea.innerText = "❌ Неверно! Слово останется в наборе.";
+            messageArea.innerText = "❌ Неверно! Останется в наборе.";
         }
         updateStatsUI();
         
@@ -1015,6 +1130,150 @@
         else nextQuestion();
     }
     
+    // ----- ЗАПУСК СЕССИИ ДЛЯ АЛФАВИТА -----
+    function startAlphabetSession(azbukaArray, azbukaName, alphabetKey) {
+        if (sessionActive) {
+            abortCurrentTimersAndSpeech();
+            sessionActive = false;
+        }
+        finalStatsPanel.innerHTML = "";
+        isAlphabetMode = true;
+        
+        wordsData = azbukaArray.map((item, idx) => ({
+            jp: item.char,
+            reading: item.reading,
+            mastered: false,
+            originalIndex: idx
+        }));
+        totalWordCount = wordsData.length;
+        unmasteredIndices = wordsData.map((_, idx) => idx);
+        statsCorrect = 0;
+        statsIncorrect = 0;
+        updateStatsUI();
+        
+        sessionStartTime = Date.now();
+        sessionActive = true;
+        
+        messageArea.innerText = `📖 Загружено символов: ${totalWordCount}. Начинаем изучение ${azbukaName}!`;
+        candidateRussianEl.innerText = "...";
+        timerDisplay.innerText = "10.0";
+        
+        if (welcomePlaceholder.style.display !== "none") {
+            welcomePlaceholder.style.display = "none";
+            if (!document.getElementById("japaneseWord")) {
+                const newWordEl = document.createElement("div");
+                newWordEl.className = "japanese-word";
+                newWordEl.id = "japaneseWord";
+                welcomePlaceholder.parentNode.insertBefore(newWordEl, welcomePlaceholder.nextSibling);
+            }
+        }
+        lockNextQuestion = false;
+        nextQuestion();
+        
+        // Обновляем кнопку и сохраняем выбор
+        if (alphabetKey === 'hiragana') {
+            lastSelectedAlphabet = 'hiragana';
+            alphabetBtn.innerHTML = "📖 ひらがな";
+        } else if (alphabetKey === 'katakana') {
+            lastSelectedAlphabet = 'katakana';
+            alphabetBtn.innerHTML = "📖 カタカナ";
+        }
+        saveSettings();
+    }
+    
+    // ----- ОБРАБОТЧИКИ КНОПОК ЭТАПОВ -----
+    function openFolderPickerForStage(stageNum) {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.webkitdirectory = true;
+        input.directory = true;
+        input.multiple = true;
+        
+        input.onchange = async (event) => {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+            messageArea.innerText = "⏳ Загрузка и разбор файлов...";
+            disableAnswerButtons(true);
+            try {
+                const words = await loadWordsFromDirectory(files);
+                stageWordsStore[stageNum] = words;
+                startSessionWithWords(words, stageNum);
+            } catch (err) {
+                messageArea.innerText = `❌ Ошибка: ${err.message}`;
+                disableAnswerButtons(true);
+                sessionActive = false;
+                welcomePlaceholder.style.display = "flex";
+                if (document.getElementById("japaneseWord")) document.getElementById("japaneseWord").remove();
+                candidateRussianEl.innerText = "нет данных";
+                totalStageWordsSpan.innerText = "0";
+                remainingWordsSpan.innerText = "0";
+            }
+            input.remove();
+        };
+        input.click();
+    }
+    
+    function startSessionWithWords(wordsArray, stageNum) {
+        if (sessionActive) {
+            abortCurrentTimersAndSpeech();
+            sessionActive = false;
+        }
+        finalStatsPanel.innerHTML = "";
+        isAlphabetMode = false;
+        
+        if (welcomePlaceholder.style.display !== "none") {
+            welcomePlaceholder.style.display = "none";
+            if (!document.getElementById("japaneseWord")) {
+                const newWordEl = document.createElement("div");
+                newWordEl.className = "japanese-word";
+                newWordEl.id = "japaneseWord";
+                welcomePlaceholder.parentNode.insertBefore(newWordEl, welcomePlaceholder.nextSibling);
+            }
+        }
+        
+        wordsData = wordsArray.map((item, idx) => ({
+            jp: item.jp,
+            ru: item.ru,
+            mastered: false,
+            originalIndex: idx
+        }));
+        totalWordCount = wordsData.length;
+        unmasteredIndices = wordsData.map((_, idx) => idx);
+        statsCorrect = 0;
+        statsIncorrect = 0;
+        updateStatsUI();
+        
+        sessionStartTime = Date.now();
+        sessionActive = true;
+        
+        messageArea.innerText = `📖 Загружено слов: ${totalWordCount}. Начинаем изучение этапа ${stageNum}!`;
+        candidateRussianEl.innerText = "...";
+        timerDisplay.innerText = "10.0";
+        
+        lockNextQuestion = false;
+        nextQuestion();
+    }
+    
+    function setStage(stageNum) {
+        if (sessionActive) {
+            abortCurrentTimersAndSpeech();
+            sessionActive = false;
+        }
+        if (stageNum === "alphabet") {
+            alphabetModal.style.display = "flex";
+            return;
+        }
+        currentStage = stageNum;
+        document.querySelectorAll(".stage-btn").forEach(btn => {
+            const sVal = btn.getAttribute("data-stage");
+            if (sVal === String(stageNum)) btn.classList.add("active");
+            else btn.classList.remove("active");
+        });
+        if (stageWordsStore[stageNum]) startSessionWithWords(stageWordsStore[stageNum], stageNum);
+        else openFolderPickerForStage(stageNum);
+    }
+    
+    // ----- ЗАГРУЗКА СЛОВ ИЗ ПАПКИ -----
     async function parseVocabularyFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -1058,91 +1317,7 @@
         return allWords;
     }
     
-    function startSessionWithWords(wordsArray, stageNum) {
-        if (sessionActive) {
-            abortCurrentTimersAndSpeech();
-            sessionActive = false;
-        }
-        finalStatsPanel.innerHTML = "";
-        if (welcomePlaceholder.style.display !== "none") {
-            welcomePlaceholder.style.display = "none";
-            if (!document.getElementById("japaneseWord")) {
-                const newWordEl = document.createElement("div");
-                newWordEl.className = "japanese-word";
-                newWordEl.id = "japaneseWord";
-                welcomePlaceholder.parentNode.insertBefore(newWordEl, welcomePlaceholder.nextSibling);
-            }
-        }
-        
-        wordsData = wordsArray.map((item, idx) => ({
-            jp: item.jp,
-            ru: item.ru,
-            mastered: false,
-            originalIndex: idx
-        }));
-        totalWordCount = wordsData.length;
-        unmasteredIndices = wordsData.map((_, idx) => idx);
-        statsCorrect = 0;
-        statsIncorrect = 0;
-        updateStatsUI();
-        
-        sessionStartTime = Date.now();
-        sessionActive = true;
-        
-        messageArea.innerText = `📖 Загружено слов: ${totalWordCount}. Начинаем изучение этапа ${stageNum}!`;
-        candidateRussianEl.innerText = "...";
-        timerDisplay.innerText = "10.0";
-        
-        lockNextQuestion = false;
-        nextQuestion();
-    }
-    
-    function openFolderPickerForStage(stageNum) {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.webkitdirectory = true;
-        input.directory = true;
-        input.multiple = true;
-        
-        input.onchange = async (event) => {
-            const files = Array.from(event.target.files);
-            if (files.length === 0) return;
-            messageArea.innerText = "⏳ Загрузка и разбор файлов...";
-            disableAnswerButtons(true);
-            try {
-                const words = await loadWordsFromDirectory(files);
-                stageWordsStore[stageNum] = words;
-                startSessionWithWords(words, stageNum);
-            } catch (err) {
-                messageArea.innerText = `❌ Ошибка: ${err.message}`;
-                disableAnswerButtons(true);
-                sessionActive = false;
-                welcomePlaceholder.style.display = "flex";
-                if (document.getElementById("japaneseWord")) document.getElementById("japaneseWord").remove();
-                candidateRussianEl.innerText = "нет данных";
-                totalStageWordsSpan.innerText = "0";
-                remainingWordsSpan.innerText = "0";
-            }
-            input.remove();
-        };
-        input.click();
-    }
-    
-    function setStage(stageNum) {
-        if (sessionActive) {
-            abortCurrentTimersAndSpeech();
-            sessionActive = false;
-        }
-        currentStage = stageNum;
-        document.querySelectorAll(".stage-btn").forEach(btn => {
-            const sVal = parseInt(btn.getAttribute("data-stage"));
-            if (sVal === stageNum) btn.classList.add("active");
-            else btn.classList.remove("active");
-        });
-        if (stageWordsStore[stageNum]) startSessionWithWords(stageWordsStore[stageNum], stageNum);
-        else openFolderPickerForStage(stageNum);
-    }
-    
+    // ----- СКРИНШОТ -----
     function takeFullScreenshot() {
         if (!appContainer) return;
         const originalMsg = messageArea.innerText;
@@ -1179,8 +1354,13 @@
     function bindEvents() {
         document.querySelectorAll(".stage-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
-                const stageVal = parseInt(btn.getAttribute("data-stage"));
-                if (!isNaN(stageVal)) setStage(stageVal);
+                const stageVal = btn.getAttribute("data-stage");
+                if (stageVal === "alphabet") {
+                    setStage("alphabet");
+                } else {
+                    const num = parseInt(stageVal);
+                    if (!isNaN(num)) setStage(num);
+                }
             });
         });
         yesBtn.addEventListener("click", () => handleAnswer(true));
@@ -1191,6 +1371,18 @@
         saveSettingsBtn.onclick = applyModalChanges;
         resetSettingsBtn.onclick = resetToDefault;
         window.onclick = (e) => { if (e.target === settingsModal) settingsModal.style.display = "none"; };
+        
+        chooseHiraganaBtn.onclick = () => {
+            alphabetModal.style.display = "none";
+            startAlphabetSession(HIRAGANA, "хираганы", "hiragana");
+        };
+        chooseKatakanaBtn.onclick = () => {
+            alphabetModal.style.display = "none";
+            startAlphabetSession(KATAKANA, "катаканы", "katakana");
+        };
+        cancelAlphabetBtn.onclick = () => {
+            alphabetModal.style.display = "none";
+        };
     }
     
     function startApp() {
